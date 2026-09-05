@@ -48,6 +48,10 @@ public final class TargetManager {
 	public long selfHurtMs = 0;
 	public double selfHurtX, selfHurtY, selfHurtZ;
 	private int prevHurtTime = 0;
+	public int sessionKills = 0;
+	public int sessionDeaths = 0;
+	private boolean prevDead = false;
+	private boolean targetWasAlive = false;
 
 	public void onAttack(Entity entity) {
 		target = entity;
@@ -83,6 +87,16 @@ public final class TargetManager {
 			}
 		}
 		if (mc.player != null) prevHurtTime = mc.player.hurtTime;
+
+		// счётчики сессии
+		boolean dead = mc.player != null && mc.player.isDeadOrDying();
+		if (dead && !prevDead) sessionDeaths++;
+		prevDead = dead;
+		if (target instanceof LivingEntity le) {
+			boolean alive = le.isAlive();
+			if (targetWasAlive && !alive && now - lastHitMs < 3000) sessionKills++;
+			targetWasAlive = alive;
+		}
 
 		// damage numbers via synced health deltas of recent target
 		if (target instanceof LivingEntity living && lastTargetHealth >= 0 && living.isAlive()) {

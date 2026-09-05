@@ -108,6 +108,8 @@ public final class ConfigManager {
 							((dev.darkness.client.module.ModeSetting) s).setFromString(v.getAsString());
 						} else if (s instanceof dev.darkness.client.module.ColorSetting && v.isJsonPrimitive()) {
 							((dev.darkness.client.module.ColorSetting) s).setFromString(v.getAsString());
+						} else if (s instanceof dev.darkness.client.module.StringSetting && v.isJsonPrimitive()) {
+							((dev.darkness.client.module.StringSetting) s).setFromString(v.getAsString());
 						}
 					}
 				}

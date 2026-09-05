@@ -17,6 +17,7 @@ import dev.darkness.client.module.modules.util.DurabilityAlertModule;
 import dev.darkness.client.module.modules.util.ElytraSwapModule;
 import dev.darkness.client.module.modules.util.ToggleSprintModule;
 import dev.darkness.client.module.modules.util.TotemSwapModule;
+import dev.darkness.client.module.modules.util.*;
 import dev.darkness.client.module.modules.visual.*;
 import dev.darkness.client.module.OverlayRenderer;
 import dev.darkness.client.ui.ClickGuiScreen;
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.3.0";
+	public static final String VERSION = "1.4.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -154,6 +155,26 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new PlayerCountModule());
 		moduleManager.register(new ArrowCountModule());
 		moduleManager.register(new SessionTimerModule());
+		moduleManager.register(new KillCounterModule());
+		moduleManager.register(new DeathCounterModule());
+		moduleManager.register(new GappleCounterModule());
+		moduleManager.register(new XpHudModule());
+		moduleManager.register(new ArmorPointsModule());
+		moduleManager.register(new AirHudModule());
+		moduleManager.register(new BowChargeHudModule());
+		moduleManager.register(new FallDamageHudModule());
+		moduleManager.register(new WeatherHudModule());
+		moduleManager.register(new MoonPhaseHudModule());
+		moduleManager.register(new EntityCountHudModule());
+		moduleManager.register(new TotemPopAlertModule());
+		moduleManager.register(new PlayerProximityAlertModule());
+		moduleManager.register(new DimensionAlertModule());
+		moduleManager.register(new HitSoundModule());
+		moduleManager.register(new CopyCoordsModule());
+		moduleManager.register(new NoPauseOnLostFocusModule());
+		moduleManager.register(new TransparentChatModule());
+		moduleManager.register(new AutoWelcomeModule());
+		moduleManager.register(new NoBlockOutlineModule());
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");
@@ -165,6 +186,7 @@ public class DarknessClient implements ClientModInitializer {
 		byDefault("Keystrokes");
 		byDefault("Zoom");
 		byDefault("ToggleSprint");
+		byDefault("FreeLook");
 	}
 
 	private void byDefault(String name) {
@@ -222,9 +244,11 @@ public class DarknessClient implements ClientModInitializer {
 			double dy = my - flLastY;
 			flLastX = mx;
 			flLastY = my;
-			float sens = (float) (mc.options.sensitivity().get() * 0.6 + 0.4);
-			freeYaw -= (float) (dx * sens * 0.4);
-			freePitch -= (float) (dy * sens * 0.4);
+			// ванильная формула чувствительности (как в MouseHandler.turnPlayer)
+			double e = mc.options.sensitivity().get() * 0.6 + 0.2;
+			double sensPow = e * e * e * 8.0 * 0.15;
+			freeYaw -= (float) (dx * sensPow);
+			freePitch -= (float) (dy * sensPow);
 			freePitch = Math.max(-90f, Math.min(90f, freePitch));
 			freeYaw = wrapDegrees(freeYaw);
 		} else if (freeLookActive) {

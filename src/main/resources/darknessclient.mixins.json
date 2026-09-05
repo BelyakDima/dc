@@ -8,6 +8,7 @@
 		"GuiMixin",
 		"GameRendererMixin",
 		"KeyboardHandlerMixin",
+		"LevelRendererMixin",
 		"MinecraftAccessor",
 		"LivingEntityMixin",
 		"MinecraftMixin",
