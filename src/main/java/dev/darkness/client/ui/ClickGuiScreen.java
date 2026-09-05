@@ -143,11 +143,16 @@ public class ClickGuiScreen extends Screen {
 
 		// bottom action buttons
 		int bx = 16, by = this.height - 24;
-		actionButton(g, bx, by, 96, 18, "HUD-редактор", () -> minecraft.setScreen(new HudEditorScreen()));
-		actionButton(g, bx + 100, by, 96, 18, "Аккаунты", () -> minecraft.setScreen(new AccountsScreen()));
-		actionButton(g, bx + 200, by, 110, 18, "Сохранить конфиг", () -> {
+		int bw = 96;
+		actionButton(g, bx, by, bw, 18, "HUD-редактор", () -> minecraft.setScreen(new HudEditorScreen()));
+		actionButton(g, bx + bw + 4, by, bw, 18, "Аккаунты", () -> minecraft.setScreen(new AccountsScreen()));
+		actionButton(g, bx + (bw + 4) * 2, by, 110, 18, "Сохранить конфиг", () -> {
 			DarknessClient.getConfigManager().save();
 			DarknessClient.getNotifications().show("§aКонфиг сохранён");
+		});
+		actionButton(g, bx + (bw + 4) * 2 + 114, by, 150, 18, "Minecraft Customize (папка)", () -> {
+			dev.darkness.client.util.CustomizeManager.openFolder();
+			DarknessClient.getNotifications().show("Положите title.png в папку — будет на главном экране");
 		});
 
 		if (listeningBind != null) {

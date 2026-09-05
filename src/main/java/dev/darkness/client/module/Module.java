@@ -90,6 +90,11 @@ public class Module {
 		}
 	}
 
+	/** Вызывается при нажатии клавиши модуля. По умолчанию — переключение. */
+	public void onKeyPressed() {
+		toggle();
+	}
+
 	public int getKeybind() {
 		return keybind;
 	}

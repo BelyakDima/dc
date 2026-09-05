@@ -1,74 +1,120 @@
 # Darkness Client
 
 Бесплатный PvP-визуал и утилиты для **Minecraft 1.21.11 (Fabric)** — всё в одном моде.
-Альтернатива платным «визуал-клиентам» (типа Pulse Visuals): открытый код, без подписок и активаций.
+Открытый код, без подписок и активаций. Альтернатива платным «визуал-клиентам».
 
 ## Установка (один .jar)
 
-1. Убедитесь, что в лаунчере установлен **Fabric Loader 0.16.9+** для Minecraft **1.21.11**
-   (на большинстве лаунчеров профиль создаётся один раз; сам мод ничего доустанавливать не требует).
-2. Скопируйте `darkness-client-<версия>.jar` в папку `mods` вашего `.minecraft`.
-3. Запустите игру. Никаких дополнительных зависимостей (в т.ч. Fabric API) не нужно.
-
-Конфиги и аккаунты хранятся в `.minecraft/config/darkness/` (`config.json`, `accounts.json`).
+1. В лаунчере нужен **Fabric Loader 0.16.9+** для Minecraft **1.21.11**.
+2. Скопируйте `darkness-client-1.0.1-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно (Fabric API не требуется).
+3. Запустите игру.
 
 ## Управление
 
 | Действие | Клавиша / команда |
 |---|---|
-| Открыть меню модулей | **Right Shift** |
-| Зум (по умолчанию) | **C** (настраивается) |
-| Команды в чате | `.help` |
-| Редактор HUD | кнопка в меню или `.hud` |
-| Менеджер аккаунтов | кнопка в меню или `.acc` |
+| Меню модулей | **Right Shift** |
+| Зум | **C** (зажать, настраивается) |
+| Элитры ⇄ нагрудник | **V** |
+| Тотем в левую руку | **G** |
+| Команды | `.help` в чате |
 
-## Команды
+Команды: `.t <модуль>`, `.bind <модуль> <клавиша|none>`, `.config save|load|reset`,
+`.accounts list|add|login|remove <ник>`, `.gui`, `.hud`, `.acc`.
 
-- `.help` — список команд
-- `.t <модуль>` — включить/выключить модуль
-- `.bind <модуль> <клавиша|none>` — привязать клавишу
-- `.config save|load|reset` — конфигурация
-- `.accounts list|add <ник>|login <ник>|remove <ник>` — аккаунты
-- `.gui` / `.hud` / `.acc` — открыть экраны
+## Модули (37)
 
-## Модули (26)
+**HUD (15):** Watermark, ArrayList (с фильтрами категорий), Keystrokes, FPS, Ping, CPS,
+Coordinates, ArmorHUD, PotionHUD, TargetHUD, ComboCounter, ReachDisplay, RAM, ServerInfo,
+**InventoryHUD** (инвентарь как элемент HUD). У каждого элемента настройка **«Масштаб»**
+(0.5–2.0) — размер меняется в меню или HUD-редакторе.
 
-**HUD:** Watermark, ArrayList, Keystrokes (WASD/мышь/CPS), FPS, Ping, CPS, Coordinates,
-ArmorHUD (прочность), PotionHUD, TargetHUD (лицо, HP, броня, дистанция), ComboCounter,
-ReachDisplay, RAM, ServerInfo.
+**Visuals (10):** CustomCrosshair, DamageNumbers, HitParticles, Trajectories, Tracers, ESP,
+Zoom, FullBright, **CustomHand** (смещение X/Y и масштаб руки), **WorldCustomizer**
+(свой цвет неба и тумана, скрытие солнца/луны/звёзд).
 
-**Visuals:** CustomCrosshair (стили, динамика), DamageNumbers (урон всплывающими числами),
-HitParticles (искры при попадании), Trajectories (траектория стрел/жемчугов), Tracers,
-ESP (2D-рамки), Zoom (плавный, настраиваемый), FullBright.
+**Оптимизация (9):** NoRain, NoHurtCam, NoEntityShadows, ParticleLimit, FpsBoost,
+**NoFireOverlay** (огонь на экране), **NoWaterOverlay** (плёнка под водой),
+**NoBlockOverlay** (тыква/порошок), **NoItemActivation** (анимация тотема на весь экран).
+Все визуальные функции Optimизации и рендер-оверлеи работают по флагам и не пересчитывают
+ничего лишнего в кадре (кэш сортировки ArrayList, редукция шагов траектории).
 
-**Оптимизация:** NoRain, NoHurtCam, NoEntityShadows, ParticleLimit, FpsBoost
-(минимум частиц, без облаков/виньетки одним кликом).
+**Утилиты (3):** AutoReconnect, **ElytraSwap** (V — элитры ⇄ нагрудник),
+**TotemSwap** (G — тотем в левую руку). Свапы работают из любого места: в инвентаре,
+в руке, в мире — клики отправляются серверу напрямую.
 
-**Утилиты:** AutoReconnect (авто-вход после кика).
+## Minecraft Customize (своя картинка на главном экране)
 
-**Менеджер аккаунтов** — оффлайн-аккаунты: добавляйте ники, переключайтесь одним кликом
-без перезапуска игры (на серверах нужно переподключиться). Microsoft-аккаунты — в планах.
+1. Откройте меню (Right Shift) → кнопка **«Minecraft Customize (папка)»** — откроется
+   `.minecraft/config/darkness/customize/`.
+2. Положите туда **title.png** (лучше 1920×1080).
+3. Перезайдите на главный экран игры — картинка будет фоном под меню.
+   Изменение подхватывается автоматически при смене файла (можно менять на лету).
+
+## Конфиги
+
+`.minecraft/config/darkness/`:
+- `config.json` — модули, настройки, бинды, позиции HUD
+- `accounts.json` — аккаунты
+- `customize/` — папка кастомизации (title.png)
 
 ## Сборка из исходников
 
-Требуется JDK 21.
+Требуется **JDK 21** (проверено на Temurin/Oracle 21). Gradle скачивается сам через wrapper.
 
 ```bash
-./gradlew build
-# результат: build/libs/darkness-client-*.jar
+./gradlew build          # результат: build/libs/darkness-client-1.0.1-mc1.21.11.jar
+./gradlew runClient      # запуск тестового клиента с модом (мир «Новый мир» через quickPlay)
 ```
 
-## Структура проекта
+## Как самому добавить модуль (5 минут)
 
-- `dev.darkness.client.module` — ядро модулей и настроек
-- `dev.darkness.client.module.modules.*` — модули по категориям
-- `dev.darkness.client.ui` — ClickGUI, HUD-редактор, экран аккаунтов
-- `dev.darkness.client.mixin` — миксины (рендер HUD, атака, чат, погода, частицы, сессия)
-- `dev.darkness.client.accounts` — менеджер аккаунтов
-- `dev.darkness.client.util` — проекция мира на экран, конфиг, CPS, таргет-трекер и пр.
+1. Создайте класс в `module/modules/<категория>/`:
+
+```java
+public class MyModule extends Module {
+    private final NumberSetting power;
+
+    public MyModule() {
+        super("MyModule", "Описание", Category.UTILITY);
+        power = new NumberSetting("Сила", "Насколько сильно", 1, 0, 10, 0.5);
+        register(power);
+        setKeybind(GLFW.GLFW_KEY_H); // опционально
+    }
+
+    @Override
+    public void onTick() {
+        // вызывается каждый тик, пока модуль включён
+    }
+}
+```
+
+2. Зарегистрируйте в `DarknessClient.registerModules()`:
+   `moduleManager.register(new MyModule());`
+
+Типы настроек: `BooleanSetting`, `NumberSetting(имя, описание, дефолт, мин, макс, шаг)`,
+`ModeSetting(имя, описание, List.of("A","B"), "A")`, `ColorSetting(имя, описание, 0xFFRRGGBB)`.
+Всё само появится в меню, сохранится в конфиг и будет фильтроваться в ArrayList.
+Для HUD-элемента наследуйтесь от `HudModule` и реализуйте `render(GuiGraphics, ...)`
+— позиция, масштаб и перетаскивание появятся автоматически.
+
+## Как добавить миксин
+
+1. Класс в `dev.darkness.client.mixin` с `@Mixin(Цель.class)` и `@Inject`.
+2. Добавьте его имя в `src/main/resources/darknessclient.mixins.json`.
+3. Цели и сигнатуры сверяйте через javap (см. AGENTS.md) или genSources.
+
+## Архитектура
+
+- `DarknessClient` — точка входа, регистрация, тик, рендер-хуки
+- `module/` — ядро (Module, HudModule, настройки) и `modules/` по категориям
+- `mixin/` — 15 миксинов: HUD-хук, клавиатура, мышь-клики атак, чат-команды, погода,
+  частицы, экранные эффекты, рука, небо, туман, тайтл-скрин, сессия, гамма
+- `ui/` — ClickGUI (immediate-mode), HUD-редактор, аккаунты
+- `accounts/` — менеджер аккаунтов (смена User без перезапуска)
+- `util/` — RenderUtil (мировая проекция → 2D), CustomizeManager, конфиг, CPS, таргет
 
 ## Лицензия
 
-MIT. Minecraft — торговая марка Mojang/Microsoft; проект не связан с ними.
-Использование на серверах с анти-читом — под вашу ответственность: визуальные модули
-могут запрещаться правилами конкретных серверов.
+MIT. Minecraft — торговая марка Mojang/Microsoft; проект с ними не связан.
+Визуальные модули могут запрещаться правилами отдельных серверов — используйте на свой риск.

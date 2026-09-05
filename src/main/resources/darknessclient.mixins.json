@@ -13,7 +13,12 @@
 		"ClientPacketListenerMixin",
 		"ParticleEngineMixin",
 		"WeatherEffectRendererMixin",
-		"OptionInstanceAccessor"
+		"OptionInstanceAccessor",
+		"ItemInHandRendererMixin",
+		"ScreenEffectRendererMixin",
+		"SkyRendererMixin",
+		"FogRendererMixin",
+		"TitleScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

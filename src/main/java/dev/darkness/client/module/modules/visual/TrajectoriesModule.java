@@ -77,16 +77,19 @@ public class TrajectoriesModule extends Module {
 		float[] hitPoint = null;
 		double x = eye.x, y = eye.y, z = eye.z;
 
-		for (int i = 0; i < 300; i++) {
+		int steps = 120;
+		for (int i = 0; i < steps; i++) {
 			double px = x, py = y, pz = z;
-			vy -= gravity;
-			x += vx;
-			y += vy;
-			z += vz;
-			vx *= drag;
-			vy *= drag;
-			vz *= drag;
-
+			// подшаги интеграции для точности
+			for (int sub = 0; sub < 3; sub++) {
+				vy -= gravity;
+				x += vx;
+				y += vy;
+				z += vz;
+				vx *= drag;
+				vy *= drag;
+				vz *= drag;
+			}
 			float[] a = RenderUtil.worldToScreen(px, py, pz);
 			float[] b = RenderUtil.worldToScreen(x, y, z);
 			if (a != null && b != null) {

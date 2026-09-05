@@ -8,6 +8,8 @@ import dev.darkness.client.module.ModuleManager;
 import dev.darkness.client.module.modules.hud.*;
 import dev.darkness.client.module.modules.optimize.*;
 import dev.darkness.client.module.modules.util.AutoReconnectModule;
+import dev.darkness.client.module.modules.util.ElytraSwapModule;
+import dev.darkness.client.module.modules.util.TotemSwapModule;
 import dev.darkness.client.module.modules.visual.*;
 import dev.darkness.client.ui.ClickGuiScreen;
 import dev.darkness.client.util.ConfigManager;
@@ -28,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.0.0";
+	public static final String VERSION = "1.0.1";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -52,6 +54,7 @@ public class DarknessClient implements ClientModInitializer {
 		cpManager = new CpManager();
 		configManager = new ConfigManager();
 		accountManager = new AccountManager(configManager.getDir());
+		dev.darkness.client.util.CustomizeManager.init(configManager.getDir());
 
 		registerModules();
 
@@ -75,6 +78,7 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new ReachDisplayModule());
 		moduleManager.register(new RamModule());
 		moduleManager.register(new ServerInfoModule());
+		moduleManager.register(new InventoryHudModule());
 		// Visuals
 		moduleManager.register(new CrosshairModule());
 		moduleManager.register(new DamageNumbersModule());
@@ -84,14 +88,22 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new EspModule());
 		moduleManager.register(new ZoomModule());
 		moduleManager.register(new FullBrightModule());
+		moduleManager.register(new CustomHandModule());
+		moduleManager.register(new WorldCustomizerModule());
 		// Optimization
 		moduleManager.register(new NoRainModule());
 		moduleManager.register(new NoHurtCamModule());
 		moduleManager.register(new NoEntityShadowsModule());
 		moduleManager.register(new ParticleLimitModule());
 		moduleManager.register(new FpsBoostModule());
+		moduleManager.register(new NoFireOverlayModule());
+		moduleManager.register(new NoWaterOverlayModule());
+		moduleManager.register(new NoBlockOverlayModule());
+		moduleManager.register(new NoItemActivationModule());
 		// Utility
 		moduleManager.register(new AutoReconnectModule());
+		moduleManager.register(new ElytraSwapModule());
+		moduleManager.register(new TotemSwapModule());
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");
@@ -157,9 +169,17 @@ public class DarknessClient implements ClientModInitializer {
 		if (mc.screen != null) return;
 		for (Module m : moduleManager.getModules()) {
 			if (m.getKeybind() == key && !(m instanceof ZoomModule)) {
-				m.toggle();
+				m.onKeyPressed();
 			}
 		}
+	}
+
+	/** Клики по собственному инвентарю (для свапов элитр/тотема). */
+	public static void minecraftClick(int menuSlot) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.gameMode == null) return;
+		mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, menuSlot, 0,
+			net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
 	}
 
 	public static void onHudRender(GuiGraphics g, float partialTick) {
@@ -190,7 +210,7 @@ public class DarknessClient implements ClientModInitializer {
 		if (!(mc.screen instanceof dev.darkness.client.ui.HudEditorScreen)) {
 			for (Module m : moduleManager.getEnabledModules()) {
 				if (m instanceof dev.darkness.client.module.HudModule hud) {
-					hud.render(g, sw, sh, partialTick);
+					hud.renderScaled(g, sw, sh, partialTick);
 				}
 			}
 		}

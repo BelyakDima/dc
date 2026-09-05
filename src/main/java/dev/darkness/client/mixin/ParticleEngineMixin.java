@@ -20,8 +20,10 @@ public abstract class ParticleEngineMixin {
 		if (mm == null) return;
 		var mod = mm.byName("ParticleLimit");
 		if (mod == null || !mod.isEnabled()) return;
+		var maxSetting = mod.number("Максимум");
+		if (maxSetting == null) return;
 		var counter = dev.darkness.client.DarknessClient.getParticleCounter();
-		int max = (int) Math.round(mod.number("Max particles").get());
+		int max = (int) Math.round(maxSetting.get());
 		if (counter.incrementAndGet() > max) {
 			cir.setReturnValue(null);
 		}

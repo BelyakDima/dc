@@ -21,7 +21,6 @@ public class HudEditorScreen extends Screen {
 		RenderUtil.rect(g, 0, 0, this.width, this.height, 0x6606060C);
 		for (HudModule hud : DarknessClient.getModuleManager().getHudModules()) {
 			if (hud.isEnabled()) {
-				hud.render(g, this.width, this.height, partialTick);
 				hud.renderEditor(g, this.width, this.height, partialTick, 0xFF7C4DFF);
 			}
 		}
