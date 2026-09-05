@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.joml.Vector3d;
+import org.joml.Vector4f;
 import org.joml.Vector3f;
 
 /**
@@ -47,22 +47,14 @@ public final class RenderUtil {
 	/** @return {x, y} in gui-scaled screen coordinates, or null if behind camera. */
 	public static float[] worldToScreen(double x, double y, double z) {
 		if (!valid) return null;
-		Vector3d v = new Vector3d(x, y, z);
-		Vector3f clip = new Vector3f();
-		// manual transform: clip = viewProj * (x,y,z,1)
-		float cx = (float) x, cy = (float) y, cz = (float) z;
-		float w = viewProj.m30() * cx + viewProj.m31() * cy + viewProj.m32() * cz + viewProj.m33();
-		if (w <= 0.001f) return null;
-		float nx = viewProj.m00() * cx + viewProj.m01() * cy + viewProj.m02() * cz + viewProj.m03();
-		float ny = viewProj.m10() * cx + viewProj.m11() * cy + viewProj.m12() * cz + viewProj.m13();
-		nx /= w;
-		ny /= w;
+		Vector4f clip = new Vector4f((float) x, (float) y, (float) z, 1f).mul(viewProj);
+		if (clip.w <= 0.001f) return null;
+		float ndcX = clip.x / clip.w;
+		float ndcY = clip.y / clip.w;
+		if (ndcX < -1.5f || ndcX > 1.5f || ndcY < -1.5f || ndcY > 1.5f) return null;
 		int sw = mc.getWindow().getGuiScaledWidth();
 		int sh = mc.getWindow().getGuiScaledHeight();
-		float sx = (nx * 0.5f + 0.5f) * sw;
-		float sy = (1.0f - (ny * 0.5f + 0.5f)) * sh;
-		if (sx < -2000 || sx > sw + 2000 || sy < -2000 || sy > sh + 2000) return null;
-		return new float[]{sx, sy};
+		return new float[]{(ndcX * 0.5f + 0.5f) * sw, (1f - (ndcY * 0.5f + 0.5f)) * sh};
 	}
 
 	public static boolean projectionValid() {
