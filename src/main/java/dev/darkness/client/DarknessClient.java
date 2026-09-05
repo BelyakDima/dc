@@ -41,6 +41,7 @@ public class DarknessClient implements ClientModInitializer {
 	private static final AtomicInteger particleCounter = new AtomicInteger();
 
 	private static boolean prevLeft, prevRight;
+	private static final boolean[] keyWasDown = new boolean[512];
 
 	@Override
 	public void onInitializeClient() {
@@ -128,24 +129,37 @@ public class DarknessClient implements ClientModInitializer {
 		prevLeft = left;
 		prevRight = right;
 
-		// keybinds (only in-game, no screen open)
-		boolean guiOpen = mc.screen != null;
-		KeyManager.tick(null, key -> {
-			if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
-				if (guiOpen && mc.screen instanceof ClickGuiScreen) {
-					mc.setScreen(null);
-				} else if (!guiOpen) {
-					mc.setScreen(new ClickGuiScreen());
-				}
-				return;
+		// keybinds: event-based dispatch (see KeyboardHandlerMixin / onKeyPressed)
+	}
+
+	/** Called from KeyboardHandlerMixin on every key event (press & release). */
+	public static void onKeyPressed(int key) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc == null || mc.getWindow() == null || key < 0 || key >= keyWasDown.length) return;
+		boolean down;
+		try {
+			down = com.mojang.blaze3d.platform.InputConstants.isKeyDown(mc.getWindow(), key);
+		} catch (Exception e) {
+			return;
+		}
+		boolean wasDown = keyWasDown[key];
+		keyWasDown[key] = down;
+		if (!down || wasDown) return; // only fresh presses
+
+		if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+			if (mc.screen == null) {
+				mc.setScreen(new ClickGuiScreen());
+			} else if (mc.screen instanceof ClickGuiScreen gui && !gui.isListeningBind()) {
+				mc.setScreen(null);
 			}
-			if (guiOpen) return;
-			for (Module m : moduleManager.getModules()) {
-				if (m.getKeybind() == key && key > 0 && !(m instanceof ZoomModule)) {
-					m.toggle();
-				}
+			return;
+		}
+		if (mc.screen != null) return;
+		for (Module m : moduleManager.getModules()) {
+			if (m.getKeybind() == key && !(m instanceof ZoomModule)) {
+				m.toggle();
 			}
-		});
+		}
 	}
 
 	public static void onHudRender(GuiGraphics g, float partialTick) {
@@ -188,6 +202,10 @@ public class DarknessClient implements ClientModInitializer {
 		var m = moduleManager.byName("AutoReconnect");
 		if (m instanceof AutoReconnectModule ar) {
 			ar.onDisconnect();
+		}
+		var z = moduleManager.byName("Zoom");
+		if (z instanceof ZoomModule zoom) {
+			zoom.reset();
 		}
 	}
 

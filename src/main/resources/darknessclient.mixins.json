@@ -6,6 +6,7 @@
 	"client": [
 		"GuiMixin",
 		"GameRendererMixin",
+		"KeyboardHandlerMixin",
 		"MinecraftAccessor",
 		"MinecraftMixin",
 		"MultiPlayerGameModeMixin",

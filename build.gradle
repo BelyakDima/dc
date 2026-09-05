@@ -8,6 +8,13 @@ loom {
 			sourceSet sourceSets.main
 		}
 	}
+
+	runs {
+		client {
+			client()
+			programArgs "--quickPlaySingleplayer", "Новый мир"
+		}
+	}
 }
 
 dependencies {

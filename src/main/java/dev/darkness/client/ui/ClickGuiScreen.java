@@ -31,6 +31,10 @@ public class ClickGuiScreen extends Screen {
 	private double scroll;
 	private EditBox searchBox;
 
+	public boolean isListeningBind() {
+		return listeningBind != null;
+	}
+
 	private record Area(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag) {
 	}
 
@@ -263,6 +267,11 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		double mx = event.x(), my = event.y();
+		if (mx >= searchBox.getX() && mx <= searchBox.getX() + searchBox.getWidth()
+			&& my >= searchBox.getY() && my <= searchBox.getY() + searchBox.getHeight()) {
+			searchBox.setFocused(true);
+			return searchBox.mouseClicked(event, doubleClick);
+		}
 		if (event.button() == 0) {
 			lastMx = mx;
 			lastMy = my;

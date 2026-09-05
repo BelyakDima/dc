@@ -9,6 +9,7 @@ import dev.darkness.client.ui.HudEditorScreen;
 import dev.darkness.client.util.ChatUtil;
 import dev.darkness.client.util.KeyManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Locale;
@@ -92,11 +93,18 @@ public class CommandManager {
 				}
 			}
 			case "accounts" -> accounts(parts);
-			case "gui" -> Minecraft.getInstance().setScreen(new ClickGuiScreen());
-			case "hud" -> Minecraft.getInstance().setScreen(new HudEditorScreen());
-			case "acc" -> Minecraft.getInstance().setScreen(new AccountsScreen());
+			case "gui" -> openScreen(() -> new ClickGuiScreen());
+			case "hud" -> openScreen(HudEditorScreen::new);
+			case "acc" -> openScreen(AccountsScreen::new);
 			default -> ChatUtil.message("§cНеизвестная команда: ." + cmd + " (.help)");
 		}
+	}
+
+	/** ChatScreen закрывается уже после отправки сообщения и затирает setScreen —
+	 *  открываем экран отложенно, на следующем проходе главного потока. */
+	private void openScreen(java.util.function.Supplier<Screen> supplier) {
+		Minecraft mc = Minecraft.getInstance();
+		mc.execute(() -> mc.setScreen(supplier.get()));
 	}
 
 	private Module needModule(String[] parts) {
