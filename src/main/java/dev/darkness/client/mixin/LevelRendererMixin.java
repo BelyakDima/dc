@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin {
 	@Inject(method = "renderBlockOutline", at = @At("HEAD"), cancellable = true)
-	private void darkness$noBlockOutline(MultiBufferSource buffer, PoseStack poseStack, boolean wireframe,
+	private void darkness$noBlockOutline(net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer,
+										 PoseStack poseStack, boolean wireframe,
 										 net.minecraft.client.renderer.state.LevelRenderState state, CallbackInfo ci) {
 		var m = DarknessClient.getModuleManager();
 		if (m != null) {
