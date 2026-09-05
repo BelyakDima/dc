@@ -95,6 +95,12 @@ public class Module {
 		toggle();
 	}
 
+	/** Модули-действия (свапы и т.п.): срабатывают как действие, а не переключение,
+	 *  и работают даже при открытом экране (инвентарь и т.п.). */
+	public boolean isActionOnly() {
+		return false;
+	}
+
 	public int getKeybind() {
 		return keybind;
 	}

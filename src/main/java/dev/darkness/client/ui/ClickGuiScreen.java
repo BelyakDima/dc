@@ -35,14 +35,20 @@ public class ClickGuiScreen extends Screen {
 		return listeningBind != null;
 	}
 
+	public boolean isSearchFocused() {
+		return searchBox != null && searchBox.isFocused();
+	}
+
 	private record Area(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag) {
 	}
 
 	private final List<Area> areas = new ArrayList<>();
 	private Area dragArea = null;
-	private double lastMx, lastMy;
 
-	private static final int PANEL_X = 16, PANEL_Y = 40, PANEL_W = 210, ROW = 20;
+	private static final int PANEL_X = 12, PANEL_Y = 26, PANEL_W = 200;
+	private static final int ROW = 16;          // высота строки модуля
+	private static final int SET_ROW = 14;      // высота строки настройки
+	private static final int TAB_W = 92, TAB_H = 15;
 
 	public ClickGuiScreen() {
 		super(Component.literal("Darkness Client"));
@@ -51,7 +57,7 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		searchBox = new EditBox(this.font, PANEL_X, 18, 120, 14, Component.literal("Поиск"));
+		searchBox = new EditBox(this.font, PANEL_X, 6, 104, 12, Component.literal("Поиск"));
 		searchBox.setMaxLength(24);
 		searchBox.setHint(Component.literal("Поиск..."));
 		searchBox.setCanLoseFocus(true);
@@ -63,111 +69,118 @@ public class ClickGuiScreen extends Screen {
 		int w = this.width, h = this.height;
 		RenderUtil.rect(g, 0, 0, w, h, 0x8806060C);
 
-		RenderUtil.text(g, DarknessClient.MOD_NAME, 16, 6, 0xFFB388FF);
-		String sub = "v" + DarknessClient.VERSION + " §8| " + DarknessClient.getModuleManager().getEnabledModules().size() + " вкл";
-		RenderUtil.text(g, sub, 16 + this.font.width(DarknessClient.MOD_NAME) + 6, 6, 0xFF9E9E9E);
+		// --- верхняя панель: заголовок, поиск, кнопки ---
+		RenderUtil.text(g, DarknessClient.MOD_NAME, 12, 8, 0xFFB388FF);
+		int tx = 12 + this.font.width(DarknessClient.MOD_NAME) + 8;
+		searchBox.render(g, mouseX, mouseY, partialTick);
 
-		// category tabs
+		int barY = 6, barH = 13;
+		int bx = w - 4;
+		bx -= 84; actionButton(g, bx, barY, 84, barH, "Customize", () -> {
+			dev.darkness.client.util.CustomizeManager.openFolder();
+			DarknessClient.getNotifications().show("Положите title.png в папку customize");
+		});
+		bx -= 84; actionButton(g, bx, barY, 84, barH, "Сохр. конфиг", () -> {
+			DarknessClient.getConfigManager().save();
+			DarknessClient.getNotifications().show("§aКонфиг сохранён");
+		});
+		bx -= 84; actionButton(g, bx, barY, 84, barH, "Аккаунты", () -> minecraft.setScreen(new AccountsScreen()));
+		bx -= 84; actionButton(g, bx, barY, 84, barH, "HUD-редактор", () -> minecraft.setScreen(new HudEditorScreen()));
+		String ver = "v" + DarknessClient.VERSION;
+		RenderUtil.textRight(g, ver, bx - 6, barY + 3, 0xFF777777);
+
+		// --- категории ---
 		int catY = PANEL_Y;
 		for (Category c : Category.values()) {
 			boolean active = c == current && searchBox.getValue().isBlank();
 			int bg = active ? RenderUtil.withAlpha(c.getColor(), 230) : 0xD90D0D14;
-			RenderUtil.rect(g, 16, catY, 96, 18, bg);
-			RenderUtil.outline(g, 16, catY, 96, 18, active ? 0xFFFFFFFF : 0x37FFFFFF);
-			RenderUtil.textCentered(g, c.getDisplayName(), 16 + 48, catY + 5, active ? 0xFFFFFFFF : 0xFFD0D0D0);
+			RenderUtil.rect(g, PANEL_X, catY, TAB_W, TAB_H, bg);
+			RenderUtil.outline(g, PANEL_X, catY, TAB_W, TAB_H, active ? 0xFFFFFFFF : 0x30FFFFFF);
+			RenderUtil.textCentered(g, c.getDisplayName(), PANEL_X + TAB_W / 2, catY + 4,
+				active ? 0xFFFFFFFF : 0xFFD0D0D0);
 			int cy = catY;
-			registerArea(16, cy, 96, 18, () -> {
+			registerArea(PANEL_X, cy, TAB_W, TAB_H, () -> {
 				current = c;
 				expanded = null;
 				scroll = 0;
 				searchBox.setValue("");
 			}, null);
-			catY += 20;
+			catY += TAB_H + 2;
 		}
 
-		// module list
+		// --- список модулей (листание только когда контент не влезает) ---
 		List<Module> modules = visibleModules();
-		int px = PANEL_X + 104, py = PANEL_Y;
-		int rowY = py;
+		int px = PANEL_X + TAB_W + 6, py = PANEL_Y;
 		int totalH = 0;
 		for (Module m : modules) totalH += rowHeight(m);
-		scroll = Math.max(0, Math.min(scroll, Math.max(0, totalH - (this.height - py - 60))));
-
-		int clipBottom = this.height - 46;
+		int viewport = this.height - py - 6;
+		boolean scrollable = totalH > viewport;
+		if (scrollable) {
+			scroll = Math.max(0, Math.min(scroll, totalH - viewport));
+		} else {
+			scroll = 0;
+		}
+		int clipBottom = this.height - (scrollable ? 6 : 2);
 		int skipped = 0;
+		int rowIdx = 0;
 		for (Module m : modules) {
 			int rh = rowHeight(m);
-			if (skipped + rh <= scroll) {
+			if (scrollable && skipped + rh <= scroll) {
 				skipped += rh;
 				continue;
 			}
 			int offset = skipped - (int) scroll;
 			skipped += rh;
-			if (rowY + (offset) > clipBottom) break;
 			int yy = py + offset;
+			if (yy > clipBottom) break;
+
 			boolean on = m.isEnabled();
-			RenderUtil.rect(g, px, yy, PANEL_W, 18, on ? RenderUtil.withAlpha(current.getColor(), 60) : 0xB30D0D14);
-			RenderUtil.outline(g, px, yy, PANEL_W, 18, on ? current.getColor() : 0x30FFFFFF);
+			RenderUtil.rect(g, px, yy, PANEL_W, ROW - 2, on ? RenderUtil.withAlpha(current.getColor(), 60) : 0xB30D0D14);
+			RenderUtil.outline(g, px, yy, PANEL_W, ROW - 2, on ? current.getColor() : 0x30FFFFFF);
 			String label = m.getName();
-			RenderUtil.text(g, label, px + 6, yy + 5, on ? 0xFFFFFFFF : 0xFFC8C8C8);
+			RenderUtil.text(g, label, px + 5, yy + 4, on ? 0xFFFFFFFF : 0xFFC8C8C8);
 			String info = m.getDisplayInfo();
 			if (info != null) {
-				RenderUtil.textRight(g, info, px + PANEL_W - (m == expanded ? 66 : 8), yy + 5, 0xFF9E9E9E);
+				RenderUtil.textRight(g, info, px + PANEL_W - (m == expanded ? 46 : 8), yy + 4, 0xFF9E9E9E);
 			}
 			if (m == expanded) {
-				RenderUtil.textRight(g, "▾", px + PANEL_W - 6, yy + 5, 0xFF9E9E9E);
+				RenderUtil.textRight(g, "▾", px + PANEL_W - 6, yy + 4, 0xFF9E9E9E);
 			}
-			int my = yy;
 			Module mm = m;
-			registerArea(px, my, PANEL_W, 18, () -> {
+			registerArea(px, yy, PANEL_W, ROW - 2, () -> {
 				expanded = expanded == mm ? null : mm;
 				listeningBind = null;
 			}, null);
 
-			// toggle pill on the right
-			int pillX = px + PANEL_W - 26, pillY = my + 6;
-			RenderUtil.rect(g, pillX, pillY, 18, 6, on ? current.getColor() : 0xFF404040);
-			RenderUtil.rect(g, on ? pillX + 12 : pillX, pillY - 1, 6, 8, 0xFFE0E0E0);
-			registerArea(pillX, pillY - 2, 18, 10, mm::toggle, null);
+			// переключатель-пилюля
+			int pillX = px + PANEL_W - 22, pillY = yy + 4;
+			RenderUtil.rect(g, pillX, pillY, 16, 5, on ? current.getColor() : 0xFF404040);
+			RenderUtil.rect(g, on ? pillX + 11 : pillX, pillY - 1, 5, 7, 0xFFE0E0E0);
+			registerArea(pillX, pillY - 2, 16, 9, mm::toggle, null);
 
 			if (m == expanded) {
-				int sy = yy + 20;
+				int sy = yy + ROW - 1;
 				for (SettingRow row : settingRows(m, px + 4, sy)) {
 					if (row.y() > clipBottom) break;
 					row.renderer().render(g, mouseX);
 					registerArea(row.x(), row.y(), row.w(), row.h(), row.click(), row.drag());
 				}
 			}
-			rowY += rh;
+			rowIdx++;
 		}
-
-		// bottom action buttons
-		int bx = 16, by = this.height - 24;
-		int bw = 96;
-		actionButton(g, bx, by, bw, 18, "HUD-редактор", () -> minecraft.setScreen(new HudEditorScreen()));
-		actionButton(g, bx + bw + 4, by, bw, 18, "Аккаунты", () -> minecraft.setScreen(new AccountsScreen()));
-		actionButton(g, bx + (bw + 4) * 2, by, 110, 18, "Сохранить конфиг", () -> {
-			DarknessClient.getConfigManager().save();
-			DarknessClient.getNotifications().show("§aКонфиг сохранён");
-		});
-		actionButton(g, bx + (bw + 4) * 2 + 114, by, 150, 18, "Minecraft Customize (папка)", () -> {
-			dev.darkness.client.util.CustomizeManager.openFolder();
-			DarknessClient.getNotifications().show("Положите title.png в папку — будет на главном экране");
-		});
 
 		if (listeningBind != null) {
 			String hint = "Нажмите клавишу для " + listeningBind.getName() + " (Esc — убрать)";
-			RenderUtil.rect(g, w / 2 - this.font.width(hint) / 2 - 6, h - 60, this.font.width(hint) + 12, 16, 0xE60D0D14);
-			RenderUtil.textCentered(g, hint, w / 2, h - 56, 0xFFB388FF);
+			int hw = this.font.width(hint) + 12;
+			RenderUtil.rect(g, w / 2 - hw / 2, h - 44, hw, 14, 0xE60D0D14);
+			RenderUtil.textCentered(g, hint, w / 2, h - 40, 0xFFB388FF);
 		}
-
-		searchBox.render(g, mouseX, mouseY, partialTick);
 	}
 
 	private void actionButton(GuiGraphics g, int x, int y, int w, int h, String label, Runnable action) {
 		RenderUtil.rect(g, x, y, w, h, 0xB3161622);
 		RenderUtil.outline(g, x, y, w, h, 0x40FFFFFF);
-		RenderUtil.textCentered(g, label, x + w / 2, y + 5, 0xFFE0E0E0);
+		RenderUtil.textCentered(g, label, x + w / 2, y + (h - 8) / 2, 0xFFE0E0E0);
 		registerArea(x, y, w, h, action, null);
 	}
 
@@ -184,8 +197,8 @@ public class ClickGuiScreen extends Screen {
 	}
 
 	private int rowHeight(Module m) {
-		if (m != expanded) return 20;
-		return 20 + m.getSettings().size() * 18 + 20; // + bind row + padding
+		if (m != expanded) return ROW;
+		return ROW - 1 + m.getSettings().size() * (SET_ROW + 1) + SET_ROW + 2;
 	}
 
 	private record SettingRow(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag,
@@ -203,12 +216,12 @@ public class ClickGuiScreen extends Screen {
 		for (var s : m.getSettings()) {
 			int ry = y;
 			if (s instanceof dev.darkness.client.module.BooleanSetting bs) {
-				rows.add(new SettingRow(x, ry, w, 16,
+				rows.add(new SettingRow(x, ry, w, SET_ROW,
 					() -> bs.set(!bs.get()), null,
 					(g, mm) -> {
-						RenderUtil.rect(g, x, ry, w, 16, 0x880D0D14);
-						RenderUtil.text(g, s.getName(), x + 4, ry + 4, 0xFFC8C8C8);
-						RenderUtil.textRight(g, bs.get() ? "ВКЛ" : "ВЫКЛ", x + w - 4, ry + 4,
+						RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
+						RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
+						RenderUtil.textRight(g, bs.get() ? "ВКЛ" : "ВЫКЛ", x + w - 4, ry + 3,
 							bs.get() ? 0xFF66BB6A : 0xFF757575);
 					}));
 			} else if (s instanceof NumberSetting ns) {
@@ -219,23 +232,23 @@ public class ClickGuiScreen extends Screen {
 					double t = Math.max(0, Math.min(1, (dmx - fx) / fw));
 					ns.set(ns.getMin() + t * (ns.getMax() - ns.getMin()));
 				};
-				rows.add(new SettingRow(x, ry, w, 16, null, apply, (g, mm) -> {
-					RenderUtil.rect(g, x, fy, w, 16, 0x880D0D14);
+				rows.add(new SettingRow(x, ry, w, SET_ROW, null, apply, (g, mm) -> {
+					RenderUtil.rect(g, x, fy, w, SET_ROW, 0x880D0D14);
 					RenderUtil.text(g, s.getName(), x + 4, fy + 3, 0xFFC8C8C8);
 					RenderUtil.textRight(g, ns.getDisplayValue(), x + w - 4, fy + 3, 0xFFB388FF);
-					int barY = fy + 14;
+					int barY = fy + SET_ROW - 2;
 					double t = (ns.get() - ns.getMin()) / (ns.getMax() - ns.getMin());
 					RenderUtil.rect(g, fx, barY, fw, 2, 0x4DFFFFFF);
 					RenderUtil.rect(g, fx, barY, (int) (fw * Math.max(0, Math.min(1, t))), 2, current.getColor());
 				}));
 			} else if (s instanceof dev.darkness.client.module.ModeSetting ms) {
-				rows.add(new SettingRow(x, ry, w, 16, ms::cycle, null, (g, mm) -> {
-					RenderUtil.rect(g, x, ry, w, 16, 0x880D0D14);
-					RenderUtil.text(g, s.getName(), x + 4, ry + 4, 0xFFC8C8C8);
-					RenderUtil.textRight(g, ms.get(), x + w - 4, ry + 4, 0xFFB388FF);
+				rows.add(new SettingRow(x, ry, w, SET_ROW, ms::cycle, null, (g, mm) -> {
+					RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
+					RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
+					RenderUtil.textRight(g, ms.get(), x + w - 4, ry + 3, 0xFFB388FF);
 				}));
 			} else if (s instanceof dev.darkness.client.module.ColorSetting cs) {
-				rows.add(new SettingRow(x, ry, w, 16, () -> {
+				rows.add(new SettingRow(x, ry, w, SET_ROW, () -> {
 					int idx = 0;
 					for (int i = 0; i < PALETTE.length; i++) {
 						if ((PALETTE[i] & 0xFFFFFF) == (cs.get() & 0xFFFFFF)) {
@@ -245,21 +258,20 @@ public class ClickGuiScreen extends Screen {
 					}
 					cs.set(PALETTE[(idx + 1) % PALETTE.length]);
 				}, null, (g, mm) -> {
-					RenderUtil.rect(g, x, ry, w, 16, 0x880D0D14);
-					RenderUtil.text(g, s.getName(), x + 4, ry + 4, 0xFFC8C8C8);
-					RenderUtil.rect(g, x + w - 40, ry + 4, 10, 8, cs.rgb());
-					RenderUtil.textRight(g, "", x + w - 4, ry + 4, 0xFFFFFFFF);
+					RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
+					RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
+					RenderUtil.rect(g, x + w - 40, ry + 3, 10, 7, cs.rgb());
 				}));
 			}
-			y += 18;
+			y += SET_ROW + 1;
 		}
-		// bind row
+		// строка бинда
 		int by = y;
 		String keyLabel = m.getKeybind() > 0 ? KeyManager.keyName(m.getKeybind()) : "—";
-		rows.add(new SettingRow(x, by, w, 16, () -> listeningBind = m, null, (g, mm) -> {
-			RenderUtil.rect(g, x, by, w, 16, 0x880D0D14);
-			RenderUtil.text(g, "Клавиша", x + 4, by + 4, 0xFFC8C8C8);
-			RenderUtil.textRight(g, listeningBind == m ? "..." : keyLabel, x + w - 4, by + 4, 0xFFB388FF);
+		rows.add(new SettingRow(x, by, w, SET_ROW, () -> listeningBind = m, null, (g, mm) -> {
+			RenderUtil.rect(g, x, by, w, SET_ROW, 0x880D0D14);
+			RenderUtil.text(g, "Клавиша", x + 4, by + 3, 0xFFC8C8C8);
+			RenderUtil.textRight(g, listeningBind == m ? "..." : keyLabel, x + w - 4, by + 3, 0xFFB388FF);
 		}));
 		return rows;
 	}
@@ -278,8 +290,6 @@ public class ClickGuiScreen extends Screen {
 			return searchBox.mouseClicked(event, doubleClick);
 		}
 		if (event.button() == 0) {
-			lastMx = mx;
-			lastMy = my;
 			for (int i = areas.size() - 1; i >= 0; i--) {
 				Area a = areas.get(i);
 				if (mx >= a.x() && mx <= a.x() + a.w() && my >= a.y() && my <= a.y() + a.h()) {
@@ -302,8 +312,6 @@ public class ClickGuiScreen extends Screen {
 			dragArea.drag().accept(mx, my);
 			return true;
 		}
-		lastMx = mx;
-		lastMy = my;
 		return super.mouseDragged(event, dragX, dragY);
 	}
 

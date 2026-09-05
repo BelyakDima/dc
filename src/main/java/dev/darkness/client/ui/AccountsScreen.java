@@ -128,6 +128,10 @@ public class AccountsScreen extends Screen {
 		return super.keyPressed(event);
 	}
 
+	public boolean isNickFocused() {
+		return nickBox != null && nickBox.isFocused();
+	}
+
 	@Override
 	public boolean isPauseScreen() {
 		return false;

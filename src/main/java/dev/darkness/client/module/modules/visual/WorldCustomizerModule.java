@@ -14,7 +14,7 @@ public class WorldCustomizerModule extends Module {
 
 	public WorldCustomizerModule() {
 		super("WorldCustomizer", "Кастомизация неба, тумана и светил", Category.VISUALS);
-		customSky = new BooleanSetting("Свой цвет неба", "Заменить цвет неба", false);
+		customSky = new BooleanSetting("Свой цвет неба", "Заменить цвет неба", true);
 		skyColor = new ColorSetting("Цвет неба", "Цвет неба", 0xFF1B2A4A);
 		customFog = new BooleanSetting("Свой цвет тумана", "Заменить цвет тумана", false);
 		fogColor = new ColorSetting("Цвет тумана", "Цвет тумана", 0xFF22334F);

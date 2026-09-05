@@ -16,6 +16,11 @@ public class TotemSwapModule extends Module {
 	}
 
 	@Override
+	public boolean isActionOnly() {
+		return true;
+	}
+
+	@Override
 	public void onKeyPressed() {
 		if (isEnabled()) swap();
 	}

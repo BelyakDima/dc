@@ -38,7 +38,12 @@ public class ColorSetting extends Setting<Integer> {
 	public void setFromString(String raw) {
 		try {
 			String s = raw.startsWith("#") ? raw.substring(1) : raw;
-			set((int) (0xFF000000L | Long.parseLong(s, 16)));
+			if (s.matches("-?\\d+")) {
+				// signed decimal (как хранится в конфиге)
+				set((int) Long.parseLong(s));
+			} else {
+				set((int) (0xFF000000L | Long.parseLong(s, 16)));
+			}
 		} catch (NumberFormatException ignored) {
 		}
 	}

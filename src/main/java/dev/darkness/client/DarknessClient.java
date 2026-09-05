@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.0.1";
+	public static final String VERSION = "1.1.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -44,6 +44,20 @@ public class DarknessClient implements ClientModInitializer {
 
 	private static boolean prevLeft, prevRight;
 	private static final boolean[] keyWasDown = new boolean[512];
+	private static boolean handRendering = false;
+
+	public static void setHandRendering(boolean v) {
+		handRendering = v;
+	}
+
+	/** true в момент отрисовки рук, если CustomHand просит убрать тряску. */
+	public static boolean shouldCancelHandBob() {
+		if (!handRendering) return false;
+		var m = moduleManager;
+		if (m == null) return false;
+		var ch = m.byName("CustomHand");
+		return ch != null && ch.isEnabled() && ch.bool("Отключить тряску") != null && ch.bool("Отключить тряску").get();
+	}
 
 	@Override
 	public void onInitializeClient() {
@@ -166,12 +180,29 @@ public class DarknessClient implements ClientModInitializer {
 			}
 			return;
 		}
-		if (mc.screen != null) return;
+		if (mc.screen != null) {
+			// при открытом экране срабатывают только «действия» (свапы), если экран не ловит текст
+			if (screenCapturesTyping(mc.screen)) return;
+			for (Module m : moduleManager.getModules()) {
+				if (m.getKeybind() == key && m.isActionOnly()) {
+					m.onKeyPressed();
+				}
+			}
+			return;
+		}
 		for (Module m : moduleManager.getModules()) {
 			if (m.getKeybind() == key && !(m instanceof ZoomModule)) {
 				m.onKeyPressed();
 			}
 		}
+	}
+
+	/** Экраны, где клавиши — это ввод текста (чат, поиск, поля аккаунтов). */
+	private static boolean screenCapturesTyping(net.minecraft.client.gui.screens.Screen screen) {
+		if (screen instanceof net.minecraft.client.gui.screens.ChatScreen) return true;
+		if (screen instanceof ClickGuiScreen gui) return gui.isSearchFocused() || gui.isListeningBind();
+		if (screen instanceof dev.darkness.client.ui.AccountsScreen acc) return acc.isNickFocused();
+		return false;
 	}
 
 	/** Клики по собственному инвентарю (для свапов элитр/тотема). */
