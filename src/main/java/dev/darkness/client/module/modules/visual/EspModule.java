@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.world.entity.Entity;
 
-public class EspModule extends Module {
+public class EspModule extends Module implements dev.darkness.client.module.OverlayRenderer {
 	private final BooleanSetting playersOnly;
 	private final ColorSetting color;
 	private final ColorSetting hitColor;
@@ -22,7 +22,7 @@ public class EspModule extends Module {
 		register(playersOnly, color, hitColor);
 	}
 
-	public void renderOverlay(GuiGraphics g) {
+	public void renderOverlay(GuiGraphics g, int screenW, int screenH, float partialTick) {
 		if (mc.level == null || mc.player == null) return;
 		for (Entity e : mc.level.entitiesForRendering()) {
 			if (e == mc.player || !e.isAlive()) continue;

@@ -42,6 +42,12 @@ public final class TargetManager {
 	private double lastReach = 0;
 	private final List<DamageNumber> damageNumbers = new ArrayList<>();
 	private final Minecraft mc = Minecraft.getInstance();
+	// хит-маркер (наш удар достиг цели)
+	public long lastHitMs = 0;
+	// направление урона по нам
+	public long selfHurtMs = 0;
+	public double selfHurtX, selfHurtY, selfHurtZ;
+	private int prevHurtTime = 0;
 
 	public void onAttack(Entity entity) {
 		target = entity;
@@ -66,6 +72,18 @@ public final class TargetManager {
 			combo = 0;
 		}
 
+		if (mc.player != null && mc.player.hurtTime > 0 && prevHurtTime == 0) {
+			// нас только что ударили — запоминаем, откуда
+			Entity attacker = mc.player.getLastHurtByMob();
+			if (attacker != null) {
+				selfHurtX = attacker.getX();
+				selfHurtY = attacker.getY() + attacker.getBbHeight() * 0.7;
+				selfHurtZ = attacker.getZ();
+				selfHurtMs = now;
+			}
+		}
+		if (mc.player != null) prevHurtTime = mc.player.hurtTime;
+
 		// damage numbers via synced health deltas of recent target
 		if (target instanceof LivingEntity living && lastTargetHealth >= 0 && living.isAlive()) {
 			float nowHealth = living.getHealth();
@@ -73,6 +91,7 @@ public final class TargetManager {
 				double dmg = lastTargetHealth - nowHealth;
 				combo++;
 				lastComboHit = now;
+				lastHitMs = now;
 				damageNumbers.add(new DamageNumber(dmg,
 					living.getX(), living.getY() + living.getBbHeight() * 0.6, living.getZ(),
 					mc.player != null && mc.player.fallDistance > 0));

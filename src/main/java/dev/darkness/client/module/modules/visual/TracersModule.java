@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.world.entity.Entity;
 
-public class TracersModule extends Module {
+public class TracersModule extends Module implements dev.darkness.client.module.OverlayRenderer {
 	private final ModeSetting targets;
 	private final ColorSetting color;
 	private final ColorSetting friendColor;
@@ -22,7 +22,7 @@ public class TracersModule extends Module {
 		register(targets, color, friendColor);
 	}
 
-	public void renderOverlay(GuiGraphics g, int screenW, int screenH) {
+	public void renderOverlay(GuiGraphics g, int screenW, int screenH, float partialTick) {
 		if (mc.level == null || mc.player == null) return;
 		float sx = screenW / 2f, sy = screenH * 0.52f;
 		for (Entity e : mc.level.entitiesForRendering()) {

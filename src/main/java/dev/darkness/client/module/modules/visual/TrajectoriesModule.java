@@ -4,34 +4,30 @@ import dev.darkness.client.module.BooleanSetting;
 import dev.darkness.client.module.Category;
 import dev.darkness.client.module.ColorSetting;
 import dev.darkness.client.module.Module;
+import dev.darkness.client.module.OverlayRenderer;
 import dev.darkness.client.util.RenderUtil;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.EggItem;
 import net.minecraft.world.item.EnderpearlItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SnowballItem;
 import net.minecraft.world.item.ThrowablePotionItem;
 import net.minecraft.world.item.TridentItem;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TrajectoriesModule extends Module {
-	private final ColorSetting lineColor;
-	private final ColorSetting hitColor;
-	private final BooleanSetting showHitBox;
+public class TrajectoriesModule extends Module implements OverlayRenderer {
+	private final ColorSetting lineColor = new ColorSetting("Цвет линии", "Цвет траектории", 0xFF7C4DFF);
+	private final ColorSetting hitColor = new ColorSetting("Цвет попадания", "Цвет точки приземления", 0xFFFF5252);
+	private final BooleanSetting showHitBox = new BooleanSetting("Точка попадания", "Показывать место падения", true);
 
 	public TrajectoriesModule() {
 		super("Trajectories", "Предсказание траектории снаряда", Category.VISUALS);
-		lineColor = new ColorSetting("Цвет линии", "Цвет траектории", 0xFF7C4DFF);
-		hitColor = new ColorSetting("Цвет попадания", "Цвет точки приземления", 0xFFFF5252);
-		showHitBox = new BooleanSetting("Точка попадания", "Показывать место падения", true);
 		register(lineColor, hitColor, showHitBox);
 	}
 
@@ -45,29 +41,29 @@ public class TrajectoriesModule extends Module {
 		if (item instanceof BowItem) {
 			float draw = mc.player.getUseItem() == mc.player.getMainHandItem()
 				? BowItem.getPowerForTime(mc.player.getUseItemRemainingTicks()) : 0f;
-			if (draw > 0.1f) return ProjType.ARROW;
-			return ProjType.NONE;
+			return draw > 0.1f ? ProjType.ARROW : ProjType.NONE;
 		}
 		if (item instanceof CrossbowItem || item instanceof TridentItem) return ProjType.ARROW;
-		if (item instanceof SnowballItem || item instanceof EnderpearlItem || item instanceof EggItem || item instanceof ThrowablePotionItem) {
+		if (item instanceof SnowballItem || item instanceof EnderpearlItem || item instanceof EggItem
+			|| item instanceof ThrowablePotionItem) {
 			return ProjType.THROWABLE;
 		}
 		return ProjType.NONE;
 	}
 
-	public void renderOverlay(GuiGraphics g) {
+	@Override
+	public void renderOverlay(GuiGraphics g, int screenW, int screenH, float partialTick) {
 		ProjType type = currentType();
 		if (type == ProjType.NONE || mc.player == null) return;
 
 		float power = 1.5f;
-		if (type == ProjType.THROWABLE) power = 1.5f;
 		if (mc.player.getUseItem().getItem() instanceof BowItem) {
 			float draw = BowItem.getPowerForTime(mc.player.getUseItemRemainingTicks());
 			power = Math.max(0.1f, draw) * 3.0f;
 		}
 
 		double gravity = type == ProjType.ARROW ? 0.05 : 0.03;
-		double drag = type == ProjType.ARROW ? 0.99 : 0.99;
+		double drag = 0.99;
 
 		Vec3 eye = mc.player.getEyePosition(1.0f);
 		Vec3 look = mc.player.getViewVector(1.0f);
@@ -80,7 +76,6 @@ public class TrajectoriesModule extends Module {
 		int steps = 120;
 		for (int i = 0; i < steps; i++) {
 			double px = x, py = y, pz = z;
-			// подшаги интеграции для точности
 			for (int sub = 0; sub < 3; sub++) {
 				vy -= gravity;
 				x += vx;
@@ -96,9 +91,8 @@ public class TrajectoriesModule extends Module {
 				points.add(a);
 				points.add(b);
 			}
-
 			if (mc.level != null && !mc.level.noCollision(mc.player,
-				new net.minecraft.world.phys.AABB(Math.min(px, x), Math.min(py, y), Math.min(pz, z),
+				new AABB(Math.min(px, x), Math.min(py, y), Math.min(pz, z),
 					Math.max(px, x), Math.max(py, y), Math.max(pz, z)))) {
 				hitPoint = b;
 				break;

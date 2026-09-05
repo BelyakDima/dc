@@ -1,20 +1,20 @@
 package dev.darkness.client.module.modules.visual;
 
 import dev.darkness.client.DarknessClient;
+import dev.darkness.client.module.BooleanSetting;
 import dev.darkness.client.module.Category;
 import dev.darkness.client.module.ColorSetting;
 import dev.darkness.client.module.Module;
 import dev.darkness.client.module.NumberSetting;
+import dev.darkness.client.module.OverlayRenderer;
 import dev.darkness.client.util.RenderUtil;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class HitParticlesModule extends Module {
+public class HitParticlesModule extends Module implements OverlayRenderer {
 	public static class Spark {
 		public double x, y, z;
 		public double vx, vy, vz;
@@ -32,20 +32,16 @@ public class HitParticlesModule extends Module {
 		}
 	}
 
-	private final ColorSetting hitColor;
-	private final ColorSetting critColor;
-	private final NumberSetting count;
-	private final NumberSetting life;
+	private final ColorSetting hitColor = new ColorSetting("Цвет удара", "Цвет обычных искр", 0xFFFFD54F);
+	private final ColorSetting critColor = new ColorSetting("Цвет крита", "Цвет критических искр", 0xFFFF5252);
+	private final NumberSetting count = new NumberSetting("Количество", "Искр за попадание", 8, 2, 20, 1);
+	private final NumberSetting life = new NumberSetting("Время жизни", "Мс до исчезновения", 500, 200, 1200, 100);
 	private final List<Spark> sparks = new ArrayList<>();
 	private final Random random = new Random();
 	private final dev.darkness.client.util.TargetManager.DamageListener listener;
 
 	public HitParticlesModule() {
 		super("HitParticles", "Искры при попадании по цели", Category.VISUALS);
-		hitColor = new ColorSetting("Цвет удара", "Цвет обычных искр", 0xFFFFD54F);
-		critColor = new ColorSetting("Цвет крита", "Цвет критических искр", 0xFFFF5252);
-		count = new NumberSetting("Количество", "Искр за попадание", 8, 2, 20, 1);
-		life = new NumberSetting("Время жизни", "Мс до исчезновения", 500, 200, 1200, 100);
 		register(hitColor, critColor, count, life);
 		listener = (amount, x, y, z, crit) -> {
 			if (!isEnabled()) return;
@@ -83,7 +79,8 @@ public class HitParticlesModule extends Module {
 		}
 	}
 
-	public void renderOverlay(GuiGraphics g) {
+	@Override
+	public void renderOverlay(GuiGraphics g, int screenW, int screenH, float partialTick) {
 		synchronized (sparks) {
 			for (Spark s : sparks) {
 				float[] pos = RenderUtil.worldToScreen(s.x, s.y, s.z);

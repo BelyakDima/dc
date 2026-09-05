@@ -6,7 +6,7 @@
 ## Установка (один .jar)
 
 1. В лаунчере нужен **Fabric Loader 0.16.9+** для Minecraft **1.21.11**.
-2. Скопируйте `darkness-client-1.2.0-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно.
+2. Скопируйте `darkness-client-1.3.0-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно.
 3. Запустите игру. В папке Legacy Launcher мод уже установлен.
 
 На рабочем столе есть ярлык **«Darkness Client»** (иконка D) — запускает Legacy Launcher,
@@ -26,24 +26,24 @@ SkinShuffle и др.) и ресурспаки.
 Команды: `.t <модуль>`, `.bind <модуль> <клавиша|none>`, `.config save|load|reset`,
 `.accounts list|add|login|remove <ник>`, `.gui`, `.hud`, `.acc`.
 
-## Модули (46)
+## Модули (65)
 
-**HUD (17):** Watermark, ArrayList (с фильтрами категорий), Keystrokes, FPS, Ping, CPS,
+**HUD (24):** Watermark, ArrayList (с фильтрами категорий), Keystrokes, FPS, Ping, CPS,
 Coordinates, ArmorHUD, PotionHUD, TargetHUD, ComboCounter, ReachDisplay, RAM, ServerInfo,
-InventoryHUD, **Clock** (реальное время), **Speedometer** (блоков/с). У каждого — «Масштаб».
+InventoryHUD, Clock, Speedometer, **AttackCooldown**, **TotemCounter**, **Compass**, **BiomeHUD**, **PlayerCount**, **ArrowCount**, **SessionTimer**, **FuntimeHelper** (панель для сервера Funtime). У каждого — «Масштаб».
 
-**Visuals (13):** CustomCrosshair, DamageNumbers, HitParticles, Trajectories, Tracers, ESP,
-Zoom, FullBright, CustomHand (пер-рука X/Y/масштаб 0.05–2, отключение тряски, 5 стилей
+**Visuals (20):** CustomCrosshair, DamageNumbers, HitParticles, Trajectories, Tracers, ESP,
+Zoom, FullBright, **FreeLook** (Alt — свободный обзор без поворота игрока), **AspectRatio** (растяжение мира 4:3/21:9 и др.), **HitBoxes** (каркас+частицы, свой цвет), **HitMarker**, **HurtDirection**, **LowHPOverlay**, **ScoreboardHide**, **AntiNausea**, CustomHand (пер-рука X/Y/масштаб 0.05–2, отключение тряски, 5 стилей
 замаха), WorldCustomizer (цвет неба/тумана, скрытие светил), **TimeChanger** (визуальные
 День/Закат/Ночь/Полночь), **NoFov** (статичный FOV), **NoViewBob**.
 
 **Оптимизация (9):** NoRain, NoHurtCam, NoEntityShadows, ParticleLimit, FpsBoost,
 NoFireOverlay, NoWaterOverlay, NoBlockOverlay, NoItemActivation.
 
-**Утилиты (7):** AutoReconnect, ElytraSwap (V — элитры ⇄ нагрудник из любого места),
+**Утилиты (11):** AutoReconnect, ElytraSwap (V — элитры ⇄ нагрудник из любого места),
 TotemSwap (G — тотем в левую руку), **ToggleSprint** (автоспринт), **AutoRespawn**
 (мгновенное возрождение), **AutoTool** (лучший инструмент при копании), **AutoClicker**
-(R зажать, до 20 CPS). Свапы и кликер — «модули-действия»: работают даже при открытом
+(R зажать, до 20 CPS), **DropProtect** (защита от случайного Q), **DurabilityAlert** (прочность), **DeathCoords** (координаты смерти), ToggleSprint, AutoRespawn, AutoTool. Свапы и кликер — «модули-действия»: работают даже при открытом
 инвентаре или меню.
 
 ## Minecraft Customize (своя картинка на главном экране)

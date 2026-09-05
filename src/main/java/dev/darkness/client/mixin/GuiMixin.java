@@ -16,6 +16,18 @@ public abstract class GuiMixin {
 		DarknessClient.onHudRender(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true));
 	}
 
+	@Inject(method = "renderScoreboardSidebar", at = @At("HEAD"), cancellable = true)
+	private void darkness$hideScoreboard(net.minecraft.client.gui.GuiGraphics guiGraphics,
+										 net.minecraft.client.DeltaTracker deltaTracker, CallbackInfo ci) {
+		var m = DarknessClient.getModuleManager();
+		if (m != null) {
+			var mod = m.byName("ScoreboardHide");
+			if (mod != null && mod.isEnabled()) {
+				ci.cancel();
+			}
+		}
+	}
+
 	@Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
 	private void darkness$customCrosshair(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
 		var m = DarknessClient.getModuleManager();

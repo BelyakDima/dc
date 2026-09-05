@@ -11,10 +11,14 @@ import dev.darkness.client.module.modules.util.AutoReconnectModule;
 import dev.darkness.client.module.modules.util.AutoClickerModule;
 import dev.darkness.client.module.modules.util.AutoRespawnModule;
 import dev.darkness.client.module.modules.util.AutoToolModule;
+import dev.darkness.client.module.modules.util.DeathCoordsModule;
+import dev.darkness.client.module.modules.util.DropProtectModule;
+import dev.darkness.client.module.modules.util.DurabilityAlertModule;
 import dev.darkness.client.module.modules.util.ElytraSwapModule;
 import dev.darkness.client.module.modules.util.ToggleSprintModule;
 import dev.darkness.client.module.modules.util.TotemSwapModule;
 import dev.darkness.client.module.modules.visual.*;
+import dev.darkness.client.module.OverlayRenderer;
 import dev.darkness.client.ui.ClickGuiScreen;
 import dev.darkness.client.util.ConfigManager;
 import dev.darkness.client.util.CpManager;
@@ -34,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.2.0";
+	public static final String VERSION = "1.3.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -131,6 +135,25 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new AutoRespawnModule());
 		moduleManager.register(new AutoToolModule());
 		moduleManager.register(new AutoClickerModule());
+		moduleManager.register(new FuntimeHelperModule());
+		moduleManager.register(new ScoreboardHideModule());
+		moduleManager.register(new AntiNauseaModule());
+		moduleManager.register(new DropProtectModule());
+		moduleManager.register(new DurabilityAlertModule());
+		moduleManager.register(new DeathCoordsModule());
+		moduleManager.register(new FreeLookModule());
+		moduleManager.register(new AspectRatioModule());
+		moduleManager.register(new HitBoxesModule());
+		moduleManager.register(new HitMarkerModule());
+		moduleManager.register(new HurtDirectionModule());
+		moduleManager.register(new LowHPOverlayModule());
+		moduleManager.register(new AttackCooldownModule());
+		moduleManager.register(new TotemCounterModule());
+		moduleManager.register(new CompassModule());
+		moduleManager.register(new BiomeHudModule());
+		moduleManager.register(new PlayerCountModule());
+		moduleManager.register(new ArrowCountModule());
+		moduleManager.register(new SessionTimerModule());
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");
@@ -141,11 +164,80 @@ public class DarknessClient implements ClientModInitializer {
 		byDefault("Coordinates");
 		byDefault("Keystrokes");
 		byDefault("Zoom");
+		byDefault("ToggleSprint");
 	}
 
 	private void byDefault(String name) {
 		Module m = moduleManager.byName(name);
 		if (m != null && !m.getName().equals("ClickGUI")) m.setEnabled(true);
+	}
+
+	// ---- FreeLook ----
+	private static boolean freeLookActive = false;
+	private static float freeYaw, freePitch;
+	private static double flLastX = -1, flLastY = -1;
+
+	public static boolean isFreeLookActive() {
+		return freeLookActive;
+	}
+
+	public static float freeLookYaw() {
+		return freeYaw;
+	}
+
+	public static float freeLookPitch() {
+		return freePitch;
+	}
+
+	/** Пока FreeLook активен — ванильный поворот игрока отменяется (MouseHandlerMixin). */
+	public static boolean suppressPlayerTurn() {
+		return freeLookActive;
+	}
+
+	/** Обновление свободной камеры по дельтам мыши (вызывается из FreeLookModule.onTick). */
+	public static void tickFreeLook(boolean held, int keybind) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.mouseHandler == null) {
+			freeLookActive = false;
+			flLastX = flLastY = -1;
+			return;
+		}
+		if (held && !mc.options.hideGui) {
+			double mx = mc.mouseHandler.xpos();
+			double my = mc.mouseHandler.ypos();
+			if (!freeLookActive) {
+				freeLookActive = true;
+				freeYaw = mc.player.getYRot();
+				freePitch = mc.player.getXRot();
+				flLastX = mx;
+				flLastY = my;
+				return;
+			}
+			if (flLastX < 0) {
+				flLastX = mx;
+				flLastY = my;
+				return;
+			}
+			double dx = mx - flLastX;
+			double dy = my - flLastY;
+			flLastX = mx;
+			flLastY = my;
+			float sens = (float) (mc.options.sensitivity().get() * 0.6 + 0.4);
+			freeYaw -= (float) (dx * sens * 0.4);
+			freePitch -= (float) (dy * sens * 0.4);
+			freePitch = Math.max(-90f, Math.min(90f, freePitch));
+			freeYaw = wrapDegrees(freeYaw);
+		} else if (freeLookActive) {
+			freeLookActive = false;
+			flLastX = flLastY = -1;
+		}
+	}
+
+	private static float wrapDegrees(float deg) {
+		float d = deg % 360f;
+		if (d >= 180f) d -= 360f;
+		if (d < -180f) d += 360f;
+		return d;
 	}
 
 	public static void onTick() {
@@ -230,17 +322,26 @@ public class DarknessClient implements ClientModInitializer {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options == null || mc.options.hideGui) return;
 
+		// FreeLook: обновляем дельты мыши каждый кадр
+		var fl = moduleManager.byName("FreeLook");
+		if (fl != null && fl.isEnabled()) {
+			boolean held = fl.getKeybind() > 0 && KeyManager.isDown(fl.getKeybind());
+			tickFreeLook(held && mc.screen == null, fl.getKeybind());
+		}
+
 		RenderUtil.updateProjection(partialTick);
 		int sw = g.guiWidth();
 		int sh = g.guiHeight();
 
-		// world-projected overlays first
+		// world-projected overlays first (everything implementing OverlayRenderer)
 		for (Module m : moduleManager.getEnabledModules()) {
-			if (m instanceof DamageNumbersModule dm) dm.renderOverlay(g);
-			else if (m instanceof HitParticlesModule hp) hp.renderOverlay(g);
-			else if (m instanceof TrajectoriesModule tj) tj.renderOverlay(g);
-			else if (m instanceof TracersModule tr) tr.renderOverlay(g, sw, sh);
-			else if (m instanceof EspModule esp) esp.renderOverlay(g);
+			if (m instanceof OverlayRenderer or) {
+				try {
+					or.renderOverlay(g, sw, sh, partialTick);
+				} catch (Exception e) {
+					LOGGER.debug("overlay {} failed", m.getName(), e);
+				}
+			}
 		}
 
 		// crosshair (first person only)
