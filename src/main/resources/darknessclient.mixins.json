@@ -1,0 +1,20 @@
+{
+	"required": true,
+	"package": "dev.darkness.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"minVersion": "0.8",
+	"client": [
+		"GuiMixin",
+		"GameRendererMixin",
+		"MinecraftAccessor",
+		"MinecraftMixin",
+		"MultiPlayerGameModeMixin",
+		"ClientPacketListenerMixin",
+		"ParticleEngineMixin",
+		"WeatherEffectRendererMixin",
+		"OptionInstanceAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

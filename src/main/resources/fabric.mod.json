@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "darknessclient",
+	"version": "${version}",
+	"name": "Darkness Client",
+	"description": "Free PvP visuals & utilities client for Minecraft 1.21.11. HUD modules, optimizations, account manager — all in one mod.",
+	"authors": [
+		"Darkness"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/darknessclient/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.darkness.client.DarknessClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "darknessclient.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.11",
+		"java": ">=21"
+	}
+}
