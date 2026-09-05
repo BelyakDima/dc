@@ -286,8 +286,12 @@ public class ClickGuiScreen extends Screen {
 		double mx = event.x(), my = event.y();
 		if (mx >= searchBox.getX() && mx <= searchBox.getX() + searchBox.getWidth()
 			&& my >= searchBox.getY() && my <= searchBox.getY() + searchBox.getHeight()) {
+			setFocused(searchBox);
 			searchBox.setFocused(true);
 			return searchBox.mouseClicked(event, doubleClick);
+		}
+		if (getFocused() == searchBox && !searchBox.isFocused()) {
+			setFocused(null);
 		}
 		if (event.button() == 0) {
 			for (int i = areas.size() - 1; i >= 0; i--) {

@@ -101,6 +101,7 @@ public class AccountsScreen extends Screen {
 		double mx = event.x(), my = event.y();
 		if (mx >= nickBox.getX() && mx <= nickBox.getX() + nickBox.getWidth()
 			&& my >= nickBox.getY() && my <= nickBox.getY() + nickBox.getHeight()) {
+			setFocused(nickBox);
 			nickBox.setFocused(true);
 			return nickBox.mouseClicked(event, doubleClick);
 		}

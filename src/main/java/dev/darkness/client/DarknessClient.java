@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.4.1";
+	public static final String VERSION = "1.4.2";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -187,6 +187,8 @@ public class DarknessClient implements ClientModInitializer {
 		byDefault("Zoom");
 		byDefault("ToggleSprint");
 		byDefault("FreeLook");
+		byDefault("ElytraSwap");
+		byDefault("TotemSwap");
 	}
 
 	private void byDefault(String name) {
@@ -287,19 +289,10 @@ public class DarknessClient implements ClientModInitializer {
 		// keybinds: event-based dispatch (see KeyboardHandlerMixin / onKeyPressed)
 	}
 
-	/** Called from KeyboardHandlerMixin on every key event (press & release). */
+	/** Called from KeyboardHandlerMixin on every key PRESS (action=1). */
 	public static void onKeyPressed(int key) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc == null || mc.getWindow() == null || key < 0 || key >= keyWasDown.length) return;
-		boolean down;
-		try {
-			down = com.mojang.blaze3d.platform.InputConstants.isKeyDown(mc.getWindow(), key);
-		} catch (Exception e) {
-			return;
-		}
-		boolean wasDown = keyWasDown[key];
-		keyWasDown[key] = down;
-		if (!down || wasDown) return; // only fresh presses
+		if (mc == null || key < 0 || key >= keyWasDown.length) return;
 
 		if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
 			if (mc.screen == null) {
