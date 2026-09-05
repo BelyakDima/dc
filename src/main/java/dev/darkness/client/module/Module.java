@@ -68,6 +68,11 @@ public class Module {
 		return s instanceof ColorSetting c ? c : null;
 	}
 
+	public StringSetting string(String n) {
+		Setting<?> s = getSetting(n);
+		return s instanceof StringSetting st ? st : null;
+	}
+
 	public boolean isEnabled() {
 		return enabled;
 	}

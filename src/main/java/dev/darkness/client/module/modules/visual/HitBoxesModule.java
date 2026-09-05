@@ -16,16 +16,14 @@ public class HitBoxesModule extends Module implements OverlayRenderer {
 	private final BooleanSetting particles;
 	private final NumberSetting particleDensity;
 	private final NumberSetting particleSpeed;
-	private final BooleanSetting throughWalls;
 
 	public HitBoxesModule() {
-		super("HitBoxes", "Каркасные хитбоксы сущностей с настройкой цвета и частиц", Category.VISUALS);
+		super("HitBoxes", "Каркасные хитбоксы сущностей (только в прямой видимости)", Category.VISUALS);
 		color = new ColorSetting("Цвет", "Цвет каркаса", 0xFF00E5FF);
 		particles = new BooleanSetting("Частицы", "Бегущие точки по рёбрам хитбокса", true);
 		particleDensity = new NumberSetting("Плотность частиц", "Точек на блок ребра", 2, 1, 8, 1);
 		particleSpeed = new NumberSetting("Скорость частиц", "Скорость бега точек", 1, 0.25, 3, 0.25);
-		throughWalls = new BooleanSetting("Сквозь стены", "Видны за препятствиями", true);
-		register(color, particles, particleDensity, particleSpeed, throughWalls);
+		register(color, particles, particleDensity, particleSpeed);
 	}
 
 	public void renderOverlay(GuiGraphics g, int screenW, int screenH, float partialTick) {
@@ -34,7 +32,8 @@ public class HitBoxesModule extends Module implements OverlayRenderer {
 		for (Entity e : mc.level.entitiesForRendering()) {
 			if (e == mc.player || !(e instanceof LivingEntity) || !e.isAlive()) continue;
 			if (e.distanceTo(mc.player) > 64) continue;
-			if (!throughWalls.get() && !mc.player.hasLineOfSight(e)) continue;
+			// только в прямой видимости — никаких сквозных стен
+			if (!mc.player.hasLineOfSight(e)) continue;
 
 			double hw = e.getBbWidth() / 2, h = e.getBbHeight();
 			float[][] c = new float[8][];

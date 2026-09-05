@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.4.3";
+	public static final String VERSION = "1.5.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -175,6 +175,13 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new TransparentChatModule());
 		moduleManager.register(new AutoWelcomeModule());
 		moduleManager.register(new NoBlockOutlineModule());
+		moduleManager.register(new FuntimeEnchantsModule());
+		moduleManager.register(new ItemScrollerModule());
+		moduleManager.register(new ToggleSneakModule());
+		moduleManager.register(new CommandTimerModule());
+		moduleManager.register(new HungerAlertModule());
+		moduleManager.register(new WaypointModule());
+		moduleManager.register(new WaypointHudModule());
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");

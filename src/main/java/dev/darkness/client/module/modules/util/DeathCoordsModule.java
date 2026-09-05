@@ -27,8 +27,11 @@ public class DeathCoordsModule extends Module {
 			deathZ = mc.player.getZ();
 		}
 		if (!dead && wasDead) {
-			ChatUtil.message(String.format(Locale.ROOT, "§cМесто смерти: §f%.0f / %.0f / %.0f",
-				deathX, deathY, deathZ));
+			String coords = String.format(Locale.ROOT, "%.0f %.0f %.0f", deathX, deathY, deathZ);
+			ChatUtil.message("§cМесто смерти: §f" + coords + " §8(в буфере)");
+			if (mc.keyboardHandler != null) {
+				mc.keyboardHandler.setClipboard(coords);
+			}
 		}
 		wasDead = dead;
 	}
