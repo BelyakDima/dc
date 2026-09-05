@@ -27,10 +27,10 @@ public class CustomHandModule extends Module {
 			List.of("Ванилла", "Быстрая", "Плавная", "Медленная", "Дуга"), "Ванилла");
 		rightX = new NumberSetting("Правая: X", "Смещение правой руки влево/вправо", 0, -1, 1, 0.05);
 		rightY = new NumberSetting("Правая: Y", "Смещение правой руки выше/ниже", 0, -1, 1, 0.05);
-		rightScale = new NumberSetting("Правая: масштаб", "Размер правой руки", 1, 0.1, 2, 0.05);
+		rightScale = new NumberSetting("Правая: масштаб", "Размер правой руки", 1, 0.05, 2, 0.05);
 		leftX = new NumberSetting("Левая: X", "Смещение левой руки влево/вправо", 0, -1, 1, 0.05);
 		leftY = new NumberSetting("Левая: Y", "Смещение левой руки выше/ниже", 0, -1, 1, 0.05);
-		leftScale = new NumberSetting("Левая: масштаб", "Размер левой руки", 1, 0.1, 2, 0.05);
+		leftScale = new NumberSetting("Левая: масштаб", "Размер левой руки", 1, 0.05, 2, 0.05);
 		register(noSway, swingStyle, rightX, rightY, rightScale, leftX, leftY, leftScale);
 	}
 

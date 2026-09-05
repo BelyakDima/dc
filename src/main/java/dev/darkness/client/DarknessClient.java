@@ -8,7 +8,11 @@ import dev.darkness.client.module.ModuleManager;
 import dev.darkness.client.module.modules.hud.*;
 import dev.darkness.client.module.modules.optimize.*;
 import dev.darkness.client.module.modules.util.AutoReconnectModule;
+import dev.darkness.client.module.modules.util.AutoClickerModule;
+import dev.darkness.client.module.modules.util.AutoRespawnModule;
+import dev.darkness.client.module.modules.util.AutoToolModule;
 import dev.darkness.client.module.modules.util.ElytraSwapModule;
+import dev.darkness.client.module.modules.util.ToggleSprintModule;
 import dev.darkness.client.module.modules.util.TotemSwapModule;
 import dev.darkness.client.module.modules.visual.*;
 import dev.darkness.client.ui.ClickGuiScreen;
@@ -30,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.1.0";
+	public static final String VERSION = "1.2.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -93,6 +97,8 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new RamModule());
 		moduleManager.register(new ServerInfoModule());
 		moduleManager.register(new InventoryHudModule());
+		moduleManager.register(new ClockModule());
+		moduleManager.register(new SpeedometerModule());
 		// Visuals
 		moduleManager.register(new CrosshairModule());
 		moduleManager.register(new DamageNumbersModule());
@@ -104,6 +110,9 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new FullBrightModule());
 		moduleManager.register(new CustomHandModule());
 		moduleManager.register(new WorldCustomizerModule());
+		moduleManager.register(new TimeChangerModule());
+		moduleManager.register(new NoFovModule());
+		moduleManager.register(new NoViewBobModule());
 		// Optimization
 		moduleManager.register(new NoRainModule());
 		moduleManager.register(new NoHurtCamModule());
@@ -118,6 +127,10 @@ public class DarknessClient implements ClientModInitializer {
 		moduleManager.register(new AutoReconnectModule());
 		moduleManager.register(new ElytraSwapModule());
 		moduleManager.register(new TotemSwapModule());
+		moduleManager.register(new ToggleSprintModule());
+		moduleManager.register(new AutoRespawnModule());
+		moduleManager.register(new AutoToolModule());
+		moduleManager.register(new AutoClickerModule());
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");

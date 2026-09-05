@@ -57,7 +57,13 @@ public abstract class ItemInHandRendererMixin {
 		if (dx != 0f || dy != 0f) {
 			poseStack.translate(dx, dy, 0f);
 		}
+		// масштаб вокруг точки крепления руки — рука уменьшается «на месте»,
+		// а не уезжает к центру экрана
 		if (s != 1f && s > 0f) {
+			float px = right ? 0.56f : -0.56f;
+			float py = -0.52f;
+			float pz = -0.72f;
+			poseStack.translate(px * (1 - s), py * (1 - s), pz * (1 - s));
 			poseStack.scale(s, s, s);
 		}
 	}

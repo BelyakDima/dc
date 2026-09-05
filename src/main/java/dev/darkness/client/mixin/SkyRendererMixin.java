@@ -20,10 +20,19 @@ public abstract class SkyRendererMixin {
 		var mm = DarknessClient.getModuleManager();
 		if (mm == null) return;
 		var m = mm.byName("WorldCustomizer");
-		if (m == null || !m.isEnabled()) return;
-		if (m.bool("Свой цвет неба") != null && m.bool("Свой цвет неба").get()) {
-			state.skyColor = m.color("Цвет неба").rgb();
-			state.sunriseAndSunsetColor = m.color("Цвет неба").rgb();
+		if (m != null && m.isEnabled()) {
+			if (m.bool("Свой цвет неба") != null && m.bool("Свой цвет неба").get()) {
+				state.skyColor = m.color("Цвет неба").rgb();
+				state.sunriseAndSunsetColor = m.color("Цвет неба").rgb();
+			}
+		}
+		var tc = mm.byName("TimeChanger");
+		if (tc != null && tc.isEnabled()) {
+			int target = ((dev.darkness.client.module.modules.visual.TimeChangerModule) tc).targetTime();
+			float angle = (target / 24000f - 0.25f) * 360f;
+			state.sunAngle = angle;
+			state.moonAngle = angle;
+			state.starAngle = angle;
 		}
 	}
 

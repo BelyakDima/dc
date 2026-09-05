@@ -6,8 +6,12 @@
 ## Установка (один .jar)
 
 1. В лаунчере нужен **Fabric Loader 0.16.9+** для Minecraft **1.21.11**.
-2. Скопируйте `darkness-client-1.0.1-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно (Fabric API не требуется).
-3. Запустите игру.
+2. Скопируйте `darkness-client-1.2.0-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно.
+3. Запустите игру. В папке Legacy Launcher мод уже установлен.
+
+На рабочем столе есть ярлык **«Darkness Client»** (иконка D) — запускает Legacy Launcher,
+в котором профиль Fabric 1.21.11 уже содержит наш мод + ваши моды (Sodium, VoiceChat,
+SkinShuffle и др.) и ресурспаки.
 
 ## Управление
 
@@ -22,26 +26,25 @@
 Команды: `.t <модуль>`, `.bind <модуль> <клавиша|none>`, `.config save|load|reset`,
 `.accounts list|add|login|remove <ник>`, `.gui`, `.hud`, `.acc`.
 
-## Модули (37)
+## Модули (46)
 
-**HUD (15):** Watermark, ArrayList (с фильтрами категорий), Keystrokes, FPS, Ping, CPS,
+**HUD (17):** Watermark, ArrayList (с фильтрами категорий), Keystrokes, FPS, Ping, CPS,
 Coordinates, ArmorHUD, PotionHUD, TargetHUD, ComboCounter, ReachDisplay, RAM, ServerInfo,
-**InventoryHUD** (инвентарь как элемент HUD). У каждого элемента настройка **«Масштаб»**
-(0.5–2.0) — размер меняется в меню или HUD-редакторе.
+InventoryHUD, **Clock** (реальное время), **Speedometer** (блоков/с). У каждого — «Масштаб».
 
-**Visuals (10):** CustomCrosshair, DamageNumbers, HitParticles, Trajectories, Tracers, ESP,
-Zoom, FullBright, **CustomHand** (смещение X/Y и масштаб руки), **WorldCustomizer**
-(свой цвет неба и тумана, скрытие солнца/луны/звёзд).
+**Visuals (13):** CustomCrosshair, DamageNumbers, HitParticles, Trajectories, Tracers, ESP,
+Zoom, FullBright, CustomHand (пер-рука X/Y/масштаб 0.05–2, отключение тряски, 5 стилей
+замаха), WorldCustomizer (цвет неба/тумана, скрытие светил), **TimeChanger** (визуальные
+День/Закат/Ночь/Полночь), **NoFov** (статичный FOV), **NoViewBob**.
 
 **Оптимизация (9):** NoRain, NoHurtCam, NoEntityShadows, ParticleLimit, FpsBoost,
-**NoFireOverlay** (огонь на экране), **NoWaterOverlay** (плёнка под водой),
-**NoBlockOverlay** (тыква/порошок), **NoItemActivation** (анимация тотема на весь экран).
-Все визуальные функции Optimизации и рендер-оверлеи работают по флагам и не пересчитывают
-ничего лишнего в кадре (кэш сортировки ArrayList, редукция шагов траектории).
+NoFireOverlay, NoWaterOverlay, NoBlockOverlay, NoItemActivation.
 
-**Утилиты (3):** AutoReconnect, **ElytraSwap** (V — элитры ⇄ нагрудник),
-**TotemSwap** (G — тотем в левую руку). Свапы работают из любого места: в инвентаре,
-в руке, в мире — клики отправляются серверу напрямую.
+**Утилиты (7):** AutoReconnect, ElytraSwap (V — элитры ⇄ нагрудник из любого места),
+TotemSwap (G — тотем в левую руку), **ToggleSprint** (автоспринт), **AutoRespawn**
+(мгновенное возрождение), **AutoTool** (лучший инструмент при копании), **AutoClicker**
+(R зажать, до 20 CPS). Свапы и кликер — «модули-действия»: работают даже при открытом
+инвентаре или меню.
 
 ## Minecraft Customize (своя картинка на главном экране)
 
