@@ -3,10 +3,15 @@
 Бесплатный PvP-визуал и утилиты для **Minecraft 1.21.11 (Fabric)** — всё в одном моде.
 Открытый код, без подписок и активаций. Альтернатива платным «визуал-клиентам».
 
+## Скачать (готовый jar)
+
+**[Darkness Client 1.8.6 — скачать jar](https://github.com/BelyakDima/dc/releases/download/v1.8.6/darkness-client-1.8.6.jar)** — положить в `mods`, готово.
+Все релизы: [Releases](https://github.com/BelyakDima/dc/releases)
+
 ## Установка (один .jar)
 
 1. В лаунчере нужен **Fabric Loader 0.16.9+** для Minecraft **1.21.11**.
-2. Скопируйте `darkness-client-1.3.0-mc1.21.11.jar` в папку `mods` — больше ничего ставить не нужно.
+2. Скопируйте `darkness-client-1.8.6.jar` в папку `mods` — больше ничего ставить не нужно.
 3. Запустите игру. В папке Legacy Launcher мод уже установлен.
 
 На рабочем столе есть ярлык **«Darkness Client»** (иконка D) — запускает Legacy Launcher,
