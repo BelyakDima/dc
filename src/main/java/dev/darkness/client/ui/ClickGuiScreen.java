@@ -6,6 +6,7 @@ import dev.darkness.client.module.Module;
 import dev.darkness.client.module.NumberSetting;
 import dev.darkness.client.util.KeyManager;
 import dev.darkness.client.util.RenderUtil;
+import dev.darkness.client.util.RoundedUI;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,16 +17,15 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 
+/**
+ * Меню в стиле PulseVisuals: тёмная панель по центру, вкладки Visuals/HUD/Utilities,
+ * двухколоночная сетка модулей с пилюлями, поиск справа, док иконок внизу.
+ */
 public class ClickGuiScreen extends Screen {
-	private static final int[] PALETTE = {
-		0xFF7C4DFF, 0xFF3D5AFE, 0xFF00B0FF, 0xFF00E676, 0xFFFFEB3B,
-		0xFFFF9100, 0xFFFF5252, 0xFFFF4081, 0xFFE040FB, 0xFFB388FF,
-		0xFFFFFFFF, 0xFF212121
-	};
-
-	private Category current = Category.COMBAT;
+	private int currentTab = 0; // 0 Visuals, 1 HUD, 2 Utilities
 	private Module expanded;
 	private Module listeningBind;
 	private double scroll;
@@ -45,10 +45,21 @@ public class ClickGuiScreen extends Screen {
 	private final List<Area> areas = new ArrayList<>();
 	private Area dragArea = null;
 
-	private static final int PANEL_X = 12, PANEL_Y = 26, PANEL_W = 200;
-	private static final int ROW = 16;          // высота строки модуля
-	private static final int SET_ROW = 14;      // высота строки настройки
-	private static final int TAB_W = 92, TAB_H = 15;
+	private static final int ROW_H = 30;
+	private static final int COL_GAP = 10;
+	private static final int ACCENT = 0xFF8C6BFF;
+	private static final int BG = 0xF0101016;
+	private static final int ROW_BG = 0xF0181820;
+	private static final int ROW_BG_DIM = 0xC0121218;
+	private static final int BORDER = 0x402A2A3A;
+
+	private record SettingRow(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag,
+							  RowRenderer renderer) {
+	}
+
+	private interface RowRenderer {
+		void render(GuiGraphics g, int mx);
+	}
 
 	public ClickGuiScreen() {
 		super(Component.literal("Darkness Client"));
@@ -57,10 +68,36 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		searchBox = new EditBox(this.font, PANEL_X, 6, 104, 12, Component.literal("Поиск"));
+		searchBox = new EditBox(this.font, 0, 0, 110, 13, Component.literal("Поиск"));
 		searchBox.setMaxLength(24);
-		searchBox.setHint(Component.literal("Поиск..."));
+		searchBox.setHint(Component.literal("Поиск"));
 		searchBox.setCanLoseFocus(true);
+	}
+
+	private List<Module> modulesForTab(int tab) {
+		if (tab == 1) {
+			return DarknessClient.getModuleManager().byCategory(Category.HUD);
+		}
+		if (tab == 2) {
+			// Utilities включает оптимизацию
+			List<Module> out = new ArrayList<>(DarknessClient.getModuleManager().byCategory(Category.UTILITY));
+			out.addAll(DarknessClient.getModuleManager().byCategory(Category.OPTIMIZATION));
+			out.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+			return out;
+		}
+		return DarknessClient.getModuleManager().byCategory(Category.VISUALS);
+	}
+
+	private List<Module> visibleModules() {
+		String q = searchBox.getValue().trim().toLowerCase(Locale.ROOT);
+		List<Module> base = modulesForTab(currentTab);
+		if (q.isBlank()) return base;
+		List<Module> out = new ArrayList<>();
+		for (Module m : DarknessClient.getModuleManager().getModules()) {
+			if (m.getName().toLowerCase(Locale.ROOT).contains(q)) out.add(m);
+		}
+		out.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+		return out;
 	}
 
 	@Override
@@ -69,104 +106,148 @@ public class ClickGuiScreen extends Screen {
 		int w = this.width, h = this.height;
 		RenderUtil.rect(g, 0, 0, w, h, 0x8806060C);
 
-		// --- верхняя панель: заголовок, поиск, кнопки ---
-		RenderUtil.text(g, DarknessClient.MOD_NAME, 12, 8, 0xFFB388FF);
-		int tx = 12 + this.font.width(DarknessClient.MOD_NAME) + 8;
-		searchBox.render(g, mouseX, mouseY, partialTick);
+		int pw = Math.min(460, w - 24);
+		int px = (w - pw) / 2;
+		int py = Math.max(20, h / 2 - 220);
+		int ph = Math.min(h - py - 20, 470);
+		if (ph < 200) ph = Math.min(h - 40, 300);
+		// панель
+		RenderUtil.rect(g, px, py, pw, ph, BG);
+		RenderUtil.rect(g, px + 2, py - 2, pw - 4, 2, BG);
+		RenderUtil.rect(g, px + 2, py + ph, pw - 4, 2, BG);
+		RenderUtil.outline(g, px, py, pw, ph, BORDER);
 
-		int barY = 6, barH = 13;
-		int bx = w - 4;
-		bx -= 84; actionButton(g, bx, barY, 84, barH, "Customize", () -> {
-			dev.darkness.client.util.CustomizeManager.openFolder();
-			DarknessClient.getNotifications().show("Положите title.png в папку customize");
-		});
-		bx -= 84; actionButton(g, bx, barY, 84, barH, "Сохр. конфиг", () -> {
-			DarknessClient.getConfigManager().save();
-			DarknessClient.getNotifications().show("§aКонфиг сохранён");
-		});
-		bx -= 84; actionButton(g, bx, barY, 84, barH, "Аккаунты", () -> minecraft.setScreen(new AccountsScreen()));
-		bx -= 84; actionButton(g, bx, barY, 84, barH, "HUD-редактор", () -> minecraft.setScreen(new HudEditorScreen()));
-		String ver = "v" + DarknessClient.VERSION;
-		RenderUtil.textRight(g, ver, bx - 6, barY + 3, 0xFF777777);
-
-		// --- категории ---
-		int catY = PANEL_Y;
-		for (Category c : Category.values()) {
-			boolean active = c == current && searchBox.getValue().isBlank();
-			int bg = active ? RenderUtil.withAlpha(c.getColor(), 230) : 0xD90D0D14;
-			RenderUtil.rect(g, PANEL_X, catY, TAB_W, TAB_H, bg);
-			RenderUtil.outline(g, PANEL_X, catY, TAB_W, TAB_H, active ? 0xFFFFFFFF : 0x30FFFFFF);
-			RenderUtil.textCentered(g, c.getDisplayName(), PANEL_X + TAB_W / 2, catY + 4,
-				active ? 0xFFFFFFFF : 0xFFD0D0D0);
-			int cy = catY;
-			registerArea(PANEL_X, cy, TAB_W, TAB_H, () -> {
-				current = c;
+		// --- верх: вкладки слева, поиск справа ---
+		int tabsY = py + 8;
+		String[] tabs = {"Visuals", "HUD", "Utilities"};
+		int tx = px + 14;
+		for (int i = 0; i < tabs.length; i++) {
+			boolean active = currentTab == i && searchBox.getValue().isBlank();
+			int color = active ? 0xFFFFFFFF : 0xFF6E6E7A;
+			RenderUtil.text(g, tabs[i], tx, tabsY, color);
+			int tw = this.font.width(tabs[i]);
+			if (active) {
+				RenderUtil.rect(g, tx, tabsY + 10, tw, 1, 0xFFFFFFFF);
+			}
+			int fx = tx;
+			int fi = i;
+			registerArea(fx, tabsY - 2, tw + 6, 16, () -> {
+				currentTab = fi;
 				expanded = null;
 				scroll = 0;
-				searchBox.setValue("");
+				if (!searchBox.getValue().isEmpty()) searchBox.setValue("");
 			}, null);
-			catY += TAB_H + 2;
+			tx += tw + 18;
 		}
 
-		// --- список модулей (листание только когда контент не влезает) ---
+		int sbx = px + pw - 150, sby = py + 5;
+		searchBox.setX(sbx + 14);
+		searchBox.setY(sby + 1);
+		// иконка лупы
+		RenderUtil.rect(g, sbx + 4, sby + 4, 5, 5, 0xFF8A8A96);
+		RenderUtil.rect(g, sbx + 8, sby + 8, 3, 1, 0xFF8A8A96);
+		RenderUtil.rect(g, sbx + 10, sby + 9, 1, 1, 0xFF8A8A96);
+		// иконка карандаша
+		RenderUtil.rect(g, sbx + 134, sby + 3, 1, 8, 0xFF55556A);
+		RenderUtil.rect(g, sbx + 132, sby + 11, 4, 2, 0xFF55556A);
+		searchBox.render(g, mouseX, mouseY, partialTick);
+
+		registerArea(searchBox.getX(), searchBox.getY(), searchBox.getWidth(), searchBox.getHeight(),
+			() -> setFocused(searchBox), null);
+
+		// --- сетка модулей ---
 		List<Module> modules = visibleModules();
-		int px = PANEL_X + TAB_W + 6, py = PANEL_Y;
+		int gridX = px + 14;
+		int gridW = pw - 28;
+		int colW = (gridW - COL_GAP) / 2;
+		int gridTop = tabsY + 20;
+		int gridBottom = py + ph - 44;
+		int viewport = Math.max(60, gridBottom - gridTop);
+
+		int[] heights = new int[modules.size()];
 		int totalH = 0;
-		for (Module m : modules) totalH += rowHeight(m);
-		int viewport = this.height - py - 6;
+		for (int i = 0; i < modules.size(); i++) {
+			heights[i] = rowHeight(modules.get(i));
+			totalH += heights[i];
+		}
 		boolean scrollable = totalH > viewport;
 		if (scrollable) {
 			scroll = Math.max(0, Math.min(scroll, totalH - viewport));
 		} else {
 			scroll = 0;
 		}
-		int clipBottom = this.height - (scrollable ? 6 : 2);
-		int skipped = 0;
-		int rowIdx = 0;
-		for (Module m : modules) {
-			int rh = rowHeight(m);
-			if (scrollable && skipped + rh <= scroll) {
-				skipped += rh;
-				continue;
-			}
-			int offset = skipped - (int) scroll;
-			skipped += rh;
-			int yy = py + offset;
-			if (yy > clipBottom) break;
 
-			boolean on = m.isEnabled();
-			RenderUtil.rect(g, px, yy, PANEL_W, ROW - 2, on ? RenderUtil.withAlpha(current.getColor(), 60) : 0xB30D0D14);
-			RenderUtil.outline(g, px, yy, PANEL_W, ROW - 2, on ? current.getColor() : 0x30FFFFFF);
-			String label = m.getName();
-			RenderUtil.text(g, label, px + 5, yy + 4, on ? 0xFFFFFFFF : 0xFFC8C8C8);
-			String info = m.getDisplayInfo();
-			if (info != null) {
-				RenderUtil.textRight(g, info, px + PANEL_W - (m == expanded ? 46 : 8), yy + 4, 0xFF9E9E9E);
+		// заполнение: две колонки сбалансированно по высоте
+		List<Module> col1 = new ArrayList<>();
+		List<Module> col2 = new ArrayList<>();
+		int[] heights1 = new int[modules.size()];
+		int[] heights2 = new int[modules.size()];
+		int h1 = 0, h2 = 0;
+		boolean left = true;
+		for (int i = 0; i < modules.size(); i++) {
+			int rh = heights[i];
+			if (left) {
+				col1.add(modules.get(i));
+				heights1[col1.size() - 1] = rh;
+				h1 += rh;
+			} else {
+				col2.add(modules.get(i));
+				heights2[col2.size() - 1] = rh;
+				h2 += rh;
 			}
-			if (m == expanded) {
-				RenderUtil.textRight(g, "▾", px + PANEL_W - 6, yy + 4, 0xFF9E9E9E);
-			}
-			Module mm = m;
-			registerArea(px, yy, PANEL_W, ROW - 2, () -> {
-				expanded = expanded == mm ? null : mm;
-				listeningBind = null;
-			}, null);
+			left = h1 <= h2;
+		}
 
-			// переключатель-пилюля
-			int pillX = px + PANEL_W - 22, pillY = yy + 4;
-			RenderUtil.rect(g, pillX, pillY, 16, 5, on ? current.getColor() : 0xFF404040);
-			RenderUtil.rect(g, on ? pillX + 11 : pillX, pillY - 1, 5, 7, 0xFFE0E0E0);
-			registerArea(pillX, pillY - 2, 16, 9, mm::toggle, null);
+		int[] scrollAdj = {0, 0};
+		scrollAdj[0] = (int) scroll;
+		scrollAdj[1] = (int) Math.max(0, Math.min(scroll, Math.max(0, h2 - viewport)));
 
-			if (m == expanded) {
-				int sy = yy + ROW - 1;
-				for (SettingRow row : settingRows(m, px + 4, sy)) {
-					if (row.y() > clipBottom) break;
-					row.renderer().render(g, mouseX);
-					registerArea(row.x(), row.y(), row.w(), row.h(), row.click(), row.drag());
+		for (int col = 0; col < 2; col++) {
+			List<Module> list = col == 0 ? col1 : col2;
+			int[] hts = col == 0 ? heights1 : heights2;
+			int cx = gridX + col * (colW + COL_GAP);
+			int cy = gridTop - scrollAdj[col];
+			for (int i = 0; i < list.size(); i++) {
+				Module m = list.get(i);
+				int rh = hts[i];
+				if (cy + rh >= gridTop - 2 && cy <= gridBottom) {
+					drawModuleRow(g, m, cx, cy, colW, rh, mouseX);
 				}
+				cy += rh;
 			}
-			rowIdx++;
+		}
+
+		// --- нижний док ---
+		int dockY = py + ph - 38;
+		int dockW = 5 * 34 + 8;
+		int dockX = w / 2 - dockW / 2;
+		RenderUtil.rect(g, dockX - 4, dockY - 4, dockW + 8, 38, BG);
+		String[] icons = {"◆", "⬡", "◈", "▤", "✦"};
+		for (int i = 0; i < 5; i++) {
+			int ix = dockX + i * 34 + 4;
+			boolean activeDock = (i >= 1 && i <= 3 && currentTab == i - 1);
+			int bgc = activeDock ? ACCENT : 0xFF1C1C26;
+			RenderUtil.rect(g, ix, dockY, 30, 30, bgc);
+			RenderUtil.rect(g, ix + 1, dockY + 1, 28, 28, bgc);
+			RenderUtil.textCentered(g, icons[i], ix + 15, dockY + 11, activeDock ? 0xFFFFFFFF : 0xFF9E9E9E);
+			int ii = i;
+			registerArea(ix, dockY, 30, 30, () -> {
+				switch (ii) {
+					case 1 -> {
+						currentTab = 0;
+						searchBox.setValue("");
+					}
+					case 2 -> {
+						currentTab = 1;
+						searchBox.setValue("");
+					}
+					case 3 -> {
+						currentTab = 2;
+						searchBox.setValue("");
+					}
+					case 4 -> minecraft.setScreen(new AccountsScreen());
+				}
+			}, null);
 		}
 
 		if (listeningBind != null) {
@@ -177,103 +258,103 @@ public class ClickGuiScreen extends Screen {
 		}
 	}
 
-	private void actionButton(GuiGraphics g, int x, int y, int w, int h, String label, Runnable action) {
-		RenderUtil.rect(g, x, y, w, h, 0xB3161622);
-		RenderUtil.outline(g, x, y, w, h, 0x40FFFFFF);
-		RenderUtil.textCentered(g, label, x + w / 2, y + (h - 8) / 2, 0xFFE0E0E0);
-		registerArea(x, y, w, h, action, null);
-	}
+	private void drawModuleRow(GuiGraphics g, Module m, int x, int y, int w, int fullH, int mouseX) {
+		boolean on = m.isEnabled();
+		int bg = on ? ROW_BG : ROW_BG_DIM;
+		RenderUtil.rect(g, x, y, w, ROW_H, bg);
+		RenderUtil.rect(g, x + 1, y + 1, w - 2, ROW_H - 2, bg);
+		RenderUtil.outline(g, x, y, w, ROW_H, on ? RenderUtil.withAlpha(ACCENT, 90) : BORDER);
+		int textColor = on ? 0xFFF0F0F0 : 0xFF6E6E7A;
+		RenderUtil.text(g, m.getName(), x + 6, y + (ROW_H - 8) / 2, textColor);
+		int pillX = x + w - 30, pillY = y + (ROW_H - 10) / 2;
+		RoundedUI.togglePill(g, pillX, pillY, on);
+		registerArea(pillX - 2, pillY - 3, 26, 16, m::toggle, null);
+		Module mm = m;
+		registerArea(x, y, w - 34, ROW_H, () -> {
+			expanded = expanded == mm ? null : mm;
+			listeningBind = null;
+		}, null);
 
-	private List<Module> visibleModules() {
-		String q = searchBox.getValue().trim().toLowerCase();
-		if (!q.isBlank()) {
-			List<Module> out = new ArrayList<>();
-			for (Module m : DarknessClient.getModuleManager().getModules()) {
-				if (m.getName().toLowerCase().contains(q)) out.add(m);
+		if (m == expanded && fullH > ROW_H) {
+			int sy = y + ROW_H;
+			int sh = fullH - ROW_H;
+			RenderUtil.rect(g, x, sy, w, sh, 0xF00D0D12);
+			RenderUtil.rect(g, x, sy, 1, sh, RenderUtil.withAlpha(ACCENT, 120));
+			for (SettingRow row : settingRows(m, x + 4, sy + 2, w - 8)) {
+				if (row.y() > y + fullH) break;
+				row.renderer().render(g, mouseX);
+				registerArea(row.x(), row.y(), row.w(), row.h(), row.click(), row.drag());
 			}
-			return out;
 		}
-		return DarknessClient.getModuleManager().byCategory(current);
 	}
 
 	private int rowHeight(Module m) {
-		if (m != expanded) return ROW;
-		return ROW - 1 + m.getSettings().size() * (SET_ROW + 1) + SET_ROW + 2;
+		if (m != expanded) return ROW_H;
+		int rows = m.getSettings().size() + 1;
+		return ROW_H + rows * 15 + 4;
 	}
 
-	private record SettingRow(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag,
-							  RowRenderer renderer) {
-	}
-
-	private interface RowRenderer {
-		void render(GuiGraphics g, int mouseX);
-	}
-
-	private List<SettingRow> settingRows(Module m, int x, int startY) {
+	private List<SettingRow> settingRows(Module m, int x, int startY, int w) {
 		List<SettingRow> rows = new ArrayList<>();
 		int y = startY;
-		int w = PANEL_W - 8;
 		for (var s : m.getSettings()) {
 			int ry = y;
+			int rw = w;
 			if (s instanceof dev.darkness.client.module.BooleanSetting bs) {
-				rows.add(new SettingRow(x, ry, w, SET_ROW,
+				rows.add(new SettingRow(x, ry, rw, 13,
 					() -> bs.set(!bs.get()), null,
 					(g, mm) -> {
-						RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
-						RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
-						RenderUtil.textRight(g, bs.get() ? "ВКЛ" : "ВЫКЛ", x + w - 4, ry + 3,
+						RenderUtil.text(g, s.getName(), x + 4, ry + 2, 0xFFC8C8C8);
+						RenderUtil.textRight(g, bs.get() ? "ВКЛ" : "ВЫКЛ", x + rw - 4, ry + 2,
 							bs.get() ? 0xFF66BB6A : 0xFF757575);
 					}));
 			} else if (s instanceof NumberSetting ns) {
 				final int fx = x + 4;
-				final int fw = w - 8;
+				final int fw = rw - 8;
 				final int fy = ry;
 				BiConsumer<Double, Double> apply = (dmx, dmy) -> {
 					double t = Math.max(0, Math.min(1, (dmx - fx) / fw));
 					ns.set(ns.getMin() + t * (ns.getMax() - ns.getMin()));
 				};
-				rows.add(new SettingRow(x, ry, w, SET_ROW, null, apply, (g, mm) -> {
-					RenderUtil.rect(g, x, fy, w, SET_ROW, 0x880D0D14);
-					RenderUtil.text(g, s.getName(), x + 4, fy + 3, 0xFFC8C8C8);
-					RenderUtil.textRight(g, ns.getDisplayValue(), x + w - 4, fy + 3, 0xFFB388FF);
-					int barY = fy + SET_ROW - 2;
+				rows.add(new SettingRow(x, ry, rw, 15, null, apply, (g, mm) -> {
+					RenderUtil.text(g, s.getName(), x + 4, fy + 2, 0xFFC8C8C8);
+					RenderUtil.textRight(g, ns.getDisplayValue(), x + rw - 4, fy + 2, 0xFFB388FF);
+					int barY = fy + 12;
 					double t = (ns.get() - ns.getMin()) / (ns.getMax() - ns.getMin());
 					RenderUtil.rect(g, fx, barY, fw, 2, 0x4DFFFFFF);
-					RenderUtil.rect(g, fx, barY, (int) (fw * Math.max(0, Math.min(1, t))), 2, current.getColor());
+					RenderUtil.rect(g, fx, barY, (int) (fw * Math.max(0, Math.min(1, t))), 2, ACCENT);
 				}));
 			} else if (s instanceof dev.darkness.client.module.ModeSetting ms) {
-				rows.add(new SettingRow(x, ry, w, SET_ROW, ms::cycle, null, (g, mm) -> {
-					RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
-					RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
-					RenderUtil.textRight(g, ms.get(), x + w - 4, ry + 3, 0xFFB388FF);
+				rows.add(new SettingRow(x, ry, rw, 13, ms::cycle, null, (g, mm) -> {
+					RenderUtil.text(g, s.getName(), x + 4, ry + 2, 0xFFC8C8C8);
+					RenderUtil.textRight(g, ms.get(), x + rw - 4, ry + 2, 0xFFB388FF);
 				}));
 			} else if (s instanceof dev.darkness.client.module.ColorSetting cs) {
-				rows.add(new SettingRow(x, ry, w, SET_ROW, () -> {
-					int idx = 0;
-					for (int i = 0; i < PALETTE.length; i++) {
-						if ((PALETTE[i] & 0xFFFFFF) == (cs.get() & 0xFFFFFF)) {
-							idx = i;
-							break;
-						}
-					}
-					cs.set(PALETTE[(idx + 1) % PALETTE.length]);
+				rows.add(new SettingRow(x, ry, rw, 13, () -> {
+					cs.shiftHue(45);
 				}, null, (g, mm) -> {
-					RenderUtil.rect(g, x, ry, w, SET_ROW, 0x880D0D14);
-					RenderUtil.text(g, s.getName(), x + 4, ry + 3, 0xFFC8C8C8);
-					RenderUtil.rect(g, x + w - 40, ry + 3, 10, 7, cs.rgb());
+					RenderUtil.text(g, s.getName(), x + 4, ry + 2, 0xFFC8C8C8);
+					RenderUtil.rect(g, x + rw - 14, ry + 3, 10, 7, cs.rgb());
+				}));
+			} else if (s instanceof dev.darkness.client.module.StringSetting ss) {
+				rows.add(new SettingRow(x, ry, rw, 13, null, null, (g, mm) -> {
+					RenderUtil.text(g, s.getName(), x + 4, ry + 2, 0xFFC8C8C8);
+					RenderUtil.textRight(g, truncate(ss.get(), 18), x + rw - 4, ry + 2, 0xFFB388FF);
 				}));
 			}
-			y += SET_ROW + 1;
+			y += 15;
 		}
-		// строка бинда
 		int by = y;
 		String keyLabel = m.getKeybind() > 0 ? KeyManager.keyName(m.getKeybind()) : "—";
-		rows.add(new SettingRow(x, by, w, SET_ROW, () -> listeningBind = m, null, (g, mm) -> {
-			RenderUtil.rect(g, x, by, w, SET_ROW, 0x880D0D14);
-			RenderUtil.text(g, "Клавиша", x + 4, by + 3, 0xFFC8C8C8);
-			RenderUtil.textRight(g, listeningBind == m ? "..." : keyLabel, x + w - 4, by + 3, 0xFFB388FF);
+		rows.add(new SettingRow(x, by, w, 13, () -> listeningBind = m, null, (g, mm) -> {
+			RenderUtil.text(g, "Клавиша", x + 4, by + 2, 0xFFC8C8C8);
+			RenderUtil.textRight(g, listeningBind == m ? "..." : keyLabel, x + w - 4, by + 2, 0xFFB388FF);
 		}));
 		return rows;
+	}
+
+	private static String truncate(String s, int max) {
+		return s.length() > max ? s.substring(0, max - 1) + "…" : s;
 	}
 
 	private void registerArea(int x, int y, int w, int h, Runnable click, BiConsumer<Double, Double> drag) {
@@ -290,8 +371,9 @@ public class ClickGuiScreen extends Screen {
 			searchBox.setFocused(true);
 			return searchBox.mouseClicked(event, doubleClick);
 		}
-		if (getFocused() == searchBox && !searchBox.isFocused()) {
+		if (getFocused() == searchBox) {
 			setFocused(null);
+			searchBox.setFocused(false);
 		}
 		if (event.button() == 0) {
 			for (int i = areas.size() - 1; i >= 0; i--) {
@@ -311,9 +393,8 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-		double mx = event.x(), my = event.y();
 		if (dragArea != null) {
-			dragArea.drag().accept(mx, my);
+			dragArea.drag().accept(event.x(), event.y());
 			return true;
 		}
 		return super.mouseDragged(event, dragX, dragY);

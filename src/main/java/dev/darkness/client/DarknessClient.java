@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.5.1";
+	public static final String VERSION = "1.6.0";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -88,7 +88,6 @@ public class DarknessClient implements ClientModInitializer {
 	private void registerModules() {
 		// HUD
 		moduleManager.register(new WatermarkModule());
-		moduleManager.register(new ArrayListModule());
 		moduleManager.register(new KeystrokesModule());
 		moduleManager.register(new FpsModule());
 		moduleManager.register(new PingModule());
@@ -185,7 +184,6 @@ public class DarknessClient implements ClientModInitializer {
 
 		// defaults: показать базовый HUD
 		byDefault("Watermark");
-		byDefault("ArrayList");
 		byDefault("FPS");
 		byDefault("CPS");
 		byDefault("Ping");
@@ -196,6 +194,12 @@ public class DarknessClient implements ClientModInitializer {
 		byDefault("FreeLook");
 		byDefault("ElytraSwap");
 		byDefault("TotemSwap");
+		byDefault("PotionsPanel");
+		byDefault("CooldownsPanel");
+		byDefault("HotKeysPanel");
+		byDefault("ChinaHat");
+		byDefault("BodyGlow");
+		byDefault("MaceCharge");
 	}
 
 	private void byDefault(String name) {
