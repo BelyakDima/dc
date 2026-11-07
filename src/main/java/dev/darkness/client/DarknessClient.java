@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DarknessClient implements ClientModInitializer {
 	public static final String MOD_ID = "darknessclient";
 	public static final String MOD_NAME = "Darkness Client";
-	public static final String VERSION = "1.5.0";
+	public static final String VERSION = "1.5.1";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
 	private static ModuleManager moduleManager;
@@ -357,13 +357,19 @@ public class DarknessClient implements ClientModInitializer {
 		int sw = g.guiWidth();
 		int sh = g.guiHeight();
 
+		// При открытом экране (инвентарь/чат/таб) тяжёлые оверлеи не нужны —
+		// экономим FPS: экраны и так размыты шейдером фона
+		boolean screenHeavy = mc.screen != null;
+
 		// world-projected overlays first (everything implementing OverlayRenderer)
-		for (Module m : moduleManager.getEnabledModules()) {
-			if (m instanceof OverlayRenderer or) {
-				try {
-					or.renderOverlay(g, sw, sh, partialTick);
-				} catch (Exception e) {
-					LOGGER.debug("overlay {} failed", m.getName(), e);
+		if (!screenHeavy) {
+			for (Module m : moduleManager.getEnabledModules()) {
+				if (m instanceof OverlayRenderer or) {
+					try {
+						or.renderOverlay(g, sw, sh, partialTick);
+					} catch (Exception e) {
+						LOGGER.debug("overlay {} failed", m.getName(), e);
+					}
 				}
 			}
 		}
@@ -375,8 +381,8 @@ public class DarknessClient implements ClientModInitializer {
 			crosshair.render(g, sw, sh);
 		}
 
-		// HUD elements
-		if (!(mc.screen instanceof dev.darkness.client.ui.HudEditorScreen)) {
+		// HUD elements: при открытом экране тоже пропускаем (кроме HUD-редактора)
+		if (!screenHeavy) {
 			for (Module m : moduleManager.getEnabledModules()) {
 				if (m instanceof dev.darkness.client.module.HudModule hud) {
 					hud.renderScaled(g, sw, sh, partialTick);
